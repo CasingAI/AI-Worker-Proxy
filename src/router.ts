@@ -10,45 +10,37 @@ export class Router {
   }
 
   /**
-   * Get provider configurations for a given route
+   * Get provider configurations for a given model name
    */
-  getProvidersForRoute(path: string): ProviderConfig[] {
-    // Normalize path
-    const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-
+  getProvidersForModel(model: string): ProviderConfig[] {
     // Check exact match first
-    if (this.routes[normalizedPath]) {
-      return this.routes[normalizedPath];
-    }
-
-    // Check if path starts with any configured route
-    for (const [route, providers] of Object.entries(this.routes)) {
-      if (normalizedPath.startsWith(route)) {
-        return providers;
-      }
+    if (this.routes[model]) {
+      return this.routes[model];
     }
 
     // Default fallback - use first available route or throw error
     const defaultRoute = Object.values(this.routes)[0];
     if (defaultRoute) {
-      console.log(`[Router] No route found for ${path}, using default route`);
+      console.log(`[Router] No configuration found for model "${model}", using default route`);
       return defaultRoute;
     }
 
-    throw new ProxyError(`No providers configured for route: ${path}`, 404);
+    throw new ProxyError(`No providers configured for model: ${model}`, 404);
   }
 
   /**
    * Execute request with provider fallback
    * Will try providers in order until one succeeds
    */
-  async executeWithFallback(
-    path: string,
-    request: OpenAIChatRequest
-  ): Promise<ProviderResponse> {
-    const providers = this.getProvidersForRoute(path);
+  async executeWithFallback(request: OpenAIChatRequest): Promise<ProviderResponse> {
+    const model = request.model;
+    if (!model) {
+      throw new ProxyError('Model name is required', 400);
+    }
 
-    console.log(`[Router] Route ${path} has ${providers.length} provider(s) configured`);
+    const providers = this.getProvidersForModel(model);
+
+    console.log(`[Router] Model "${model}" has ${providers.length} provider(s) configured`);
 
     let lastError: any = null;
 

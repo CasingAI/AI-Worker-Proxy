@@ -14,14 +14,14 @@
 npm install
 ```
 
-### 2. Configure Your Routes
+### 2. Configure Your Model Names
 
 Edit `wrangler.toml` and customize the `ROUTES_CONFIG` section:
 
 ```toml
 ROUTES_CONFIG = '''
 {
-  "/your-route": [
+  "your-model-name": [
     {
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",
@@ -31,6 +31,8 @@ ROUTES_CONFIG = '''
 }
 '''
 ```
+
+**Note**: Use model names (e.g., `"fast"`, `"deep-think"`) in your API requests, not URL paths.
 
 ### 3. Set Up API Keys
 
@@ -67,11 +69,11 @@ npm run dev
 Test the endpoint:
 
 ```bash
-curl -X POST http://localhost:8787/your-route \
+curl -X POST http://localhost:8787/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer my-secret-token" \
   -d '{
-    "model": "any",
+    "model": "your-model-name",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```

@@ -13,10 +13,11 @@ binding = "AI"
 # Proxy authentication token
 PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
 
-# Routes configuration
+# Model routing configuration
+# Note: Model names are now used for routing instead of URL paths
 ROUTES_CONFIG = '''
 {
-  "/deep-think": [
+  "deep-think": [
     {
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",
@@ -28,7 +29,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
-  "/fast": [
+  "fast": [
     {
       "provider": "google",
       "model": "gemini-2.0-flash-exp",
@@ -40,14 +41,14 @@ ROUTES_CONFIG = '''
       "apiKeys": []
     }
   ],
-  "/think": [
+  "think": [
     {
       "provider": "anthropic",
       "model": "claude-sonnet-4-20250514",
       "apiKeys": ["ANTHROPIC_KEY_1"]
     }
   ],
-  "/nvidia": [
+  "nvidia": [
     {
       "provider": "openai-compatible",
       "baseUrl": "https://integrate.api.nvidia.com/v1",
@@ -55,14 +56,14 @@ ROUTES_CONFIG = '''
       "apiKeys": ["NVIDIA_KEY_1", "NVIDIA_KEY_2"]
     }
   ],
-  "/openai": [
+  "openai": [
     {
       "provider": "openai",
       "model": "gpt-4o",
       "apiKeys": ["OPENAI_KEY_1", "OPENAI_KEY_2"]
     }
   ],
-  "/together": [
+  "together": [
     {
       "provider": "openai-compatible",
       "baseUrl": "https://api.together.xyz/v1",
@@ -70,7 +71,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["TOGETHER_KEY_1"]
     }
   ],
-  "/groq": [
+  "groq": [
     {
       "provider": "openai-compatible",
       "baseUrl": "https://api.groq.com/openai/v1",
@@ -78,7 +79,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GROQ_KEY_1"]
     }
   ],
-  "/mixed": [
+  "mixed": [
     {
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",

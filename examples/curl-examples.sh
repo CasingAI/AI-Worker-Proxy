@@ -2,7 +2,7 @@
 
 # Example cURL commands for AI Worker Proxy
 
-PROXY_URL="https://your-worker.workers.dev"
+PROXY_URL="https://your-worker.workers.dev/v1/chat/completions"
 AUTH_TOKEN="your-secret-proxy-token-here"
 
 echo "=== AI Worker Proxy - cURL Examples ==="
@@ -10,16 +10,16 @@ echo
 
 # Example 1: Health check
 echo "1. Health check (no auth required)"
-curl -X GET "${PROXY_URL}/health"
+curl -X GET "https://your-worker.workers.dev/health"
 echo -e "\n"
 
-# Example 2: Simple non-streaming request
-echo "2. Simple chat completion"
-curl -X POST "${PROXY_URL}/fast" \
+# Example 2: Simple non-streaming request with "fast" model
+echo "2. Simple chat completion with 'fast' model"
+curl -X POST "${PROXY_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -d '{
-    "model": "any-model-name",
+    "model": "fast",
     "messages": [
       {"role": "user", "content": "What is 2+2?"}
     ],
@@ -27,13 +27,13 @@ curl -X POST "${PROXY_URL}/fast" \
   }'
 echo -e "\n"
 
-# Example 3: Streaming request
-echo "3. Streaming response"
-curl -X POST "${PROXY_URL}/deep-think" \
+# Example 3: Streaming request with "deep-think" model
+echo "3. Streaming response with 'deep-think' model"
+curl -X POST "${PROXY_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -d '{
-    "model": "any-model-name",
+    "model": "deep-think",
     "messages": [
       {"role": "user", "content": "Count from 1 to 5"}
     ],
@@ -42,13 +42,13 @@ curl -X POST "${PROXY_URL}/deep-think" \
   --no-buffer
 echo -e "\n"
 
-# Example 4: With system message and temperature
+# Example 4: With system message and parameters
 echo "4. With system message and parameters"
-curl -X POST "${PROXY_URL}/deep-think" \
+curl -X POST "${PROXY_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -d '{
-    "model": "any-model-name",
+    "model": "deep-think",
     "messages": [
       {"role": "system", "content": "You are a helpful assistant."},
       {"role": "user", "content": "Tell me a joke"}
@@ -59,13 +59,13 @@ curl -X POST "${PROXY_URL}/deep-think" \
   }'
 echo -e "\n"
 
-# Example 5: Function calling
+# Example 5: Function calling with "deep-think" model
 echo "5. Function calling / Tools"
-curl -X POST "${PROXY_URL}/deep-think" \
+curl -X POST "${PROXY_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -d '{
-    "model": "any-model-name",
+    "model": "deep-think",
     "messages": [
       {"role": "user", "content": "What is the weather in Paris?"}
     ],
@@ -96,17 +96,31 @@ curl -X POST "${PROXY_URL}/deep-think" \
   }'
 echo -e "\n"
 
-# Example 6: Multi-turn conversation
+# Example 6: Multi-turn conversation with "fast" model
 echo "6. Multi-turn conversation"
-curl -X POST "${PROXY_URL}/fast" \
+curl -X POST "${PROXY_URL}" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -d '{
-    "model": "any-model-name",
+    "model": "fast",
     "messages": [
       {"role": "user", "content": "My name is Alice"},
       {"role": "assistant", "content": "Nice to meet you, Alice! How can I help you today?"},
       {"role": "user", "content": "What is my name?"}
+    ],
+    "stream": false
+  }'
+echo -e "\n"
+
+# Example 7: Using "nvidia" model (OpenAI-compatible provider)
+echo "7. Using NVIDIA model"
+curl -X POST "${PROXY_URL}" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${AUTH_TOKEN}" \
+  -d '{
+    "model": "nvidia",
+    "messages": [
+      {"role": "user", "content": "Explain quantum computing in simple terms"}
     ],
     "stream": false
   }'

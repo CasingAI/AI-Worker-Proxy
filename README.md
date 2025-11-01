@@ -6,7 +6,7 @@ OpenAI-compatible proxy for multiple AI providers on Cloudflare Workers. Route r
 
 - **OpenAI-Compatible API**: Drop-in replacement for OpenAI API clients
 - **Multiple Providers**: Support for Anthropic Claude, Google Gemini, OpenAI, custom OpenAI-compatible APIs, and Cloudflare AI Workers
-- **Smart Routing**: Configure custom routes with provider fallback chains
+- **Model-Based Routing**: Use model names (e.g., `model: "deep-think"`) to route to different provider chains
 - **Token Rotation**: Automatic rotation through multiple API keys with retry logic
 - **Streaming Support**: Full SSE streaming support for all providers
 - **Tools/Function Calling**: Pass-through support for tools and MCP
@@ -34,9 +34,9 @@ cd AI-Worker-Proxy
 npm install
 ```
 
-### 2. Configure Routes
+### 2. Configure Model Routing
 
-Edit `wrangler.toml` to configure your routes and providers:
+Edit `wrangler.toml` to configure your model names and providers:
 
 ```toml
 [vars]
@@ -44,7 +44,7 @@ PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
 
 ROUTES_CONFIG = '''
 {
-  "/deep-think": [
+  "deep-think": [
     {
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",
@@ -56,7 +56,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
-  "/fast": [
+  "fast": [
     {
       "provider": "google",
       "model": "gemini-2.0-flash-exp",
@@ -66,6 +66,8 @@ ROUTES_CONFIG = '''
 }
 '''
 ```
+
+**Note**: Model names (e.g., `"deep-think"`, `"fast"`) are used in your API requests, not URL paths.
 
 ### 3. Set API Keys
 
@@ -92,16 +94,18 @@ npm run dev
 
 ## Configuration
 
-### Route Configuration
+### Model Routing Configuration
 
-Each route maps to an array of provider configurations. The proxy will try providers in order until one succeeds.
+Each model name maps to an array of provider configurations. The proxy will try providers in order until one succeeds.
+
+**Important**: Routing is now based on the `model` field in your API request, not the URL path.
 
 ```json
 {
-  "/route-name": [
+  "model-name": [
     {
       "provider": "provider-type",
-      "model": "model-name",
+      "model": "actual-model-id",
       "apiKeys": ["ENV_VAR_1", "ENV_VAR_2"],
       "baseUrl": "https://api.example.com/v1"  // Only for openai-compatible
     }
@@ -174,11 +178,11 @@ binding = "AI"
 ### cURL
 
 ```bash
-curl -X POST https://your-worker.workers.dev/deep-think \
+curl -X POST https://your-worker.workers.dev/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your-secret-proxy-token-here" \
   -d '{
-    "model": "any-model-name",
+    "model": "deep-think",
     "messages": [
       {"role": "user", "content": "Hello!"}
     ],
@@ -192,12 +196,12 @@ curl -X POST https://your-worker.workers.dev/deep-think \
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="https://your-worker.workers.dev/deep-think",
+    base_url="https://your-worker.workers.dev/v1/chat/completions",
     api_key="your-secret-proxy-token-here"
 )
 
 response = client.chat.completions.create(
-    model="any-model-name",  # Model is set by route config
+    model="deep-think",  # Model name determines routing
     messages=[
         {"role": "user", "content": "Hello!"}
     ],
@@ -205,20 +209,21 @@ response = client.chat.completions.create(
 )
 
 for chunk in response:
-    print(chunk.choices[0].delta.content, end="")
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
 ```
 
 ### JavaScript
 
 ```javascript
-const response = await fetch('https://your-worker.workers.dev/fast', {
+const response = await fetch('https://your-worker.workers.dev/v1/chat/completions', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': 'Bearer your-secret-proxy-token-here'
   },
   body: JSON.stringify({
-    model: 'any-model-name',
+    model: 'fast',  // Use different model names for different provider chains
     messages: [
       { role: 'user', content: 'Hello!' }
     ],
@@ -258,7 +263,7 @@ tools = [
 ]
 
 response = client.chat.completions.create(
-    model="any-model-name",
+    model="deep-think",  # Works with any configured model
     messages=[{"role": "user", "content": "What's the weather in NYC?"}],
     tools=tools
 )
@@ -275,9 +280,9 @@ For each provider, the proxy tries API keys in order:
 - If all keys fail, it moves to the next provider
 
 ### 2. Provider Fallback
-If all tokens for a provider fail, it tries the next provider in the route configuration.
+If all tokens for a provider fail, it tries the next provider in the model configuration.
 
-Example flow for `/deep-think`:
+Example flow for `model: "deep-think"`:
 1. Try Anthropic with `ANTHROPIC_KEY_1`
 2. If failed, try `ANTHROPIC_KEY_2`
 3. If all Anthropic keys failed, try Google with `GOOGLE_KEY_1`
@@ -392,7 +397,7 @@ The proxy returns OpenAI-compatible error responses:
 
 Common error codes:
 - `401`: Unauthorized (invalid proxy token)
-- `404`: Route not found
+- `404`: Model configuration not found
 - `429`: Rate limit exceeded (all tokens exhausted)
 - `500`: All providers failed
 

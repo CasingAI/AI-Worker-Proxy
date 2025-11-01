@@ -51,12 +51,16 @@ export default {
         throw new ProxyError('Invalid request: messages array is required', 400);
       }
 
-      console.log(`[Worker] Processing request for path: ${path}`);
+      if (!chatRequest.model) {
+        throw new ProxyError('Invalid request: model is required', 400);
+      }
+
+      console.log(`[Worker] Processing request for model: ${chatRequest.model}`);
       console.log(`[Worker] Stream mode: ${chatRequest.stream || false}`);
 
-      // Route request to appropriate providers
+      // Route request to appropriate providers based on model name
       const router = new Router(env);
-      const response = await router.executeWithFallback(path, chatRequest);
+      const response = await router.executeWithFallback(chatRequest);
 
       if (!response.success) {
         throw new ProxyError(

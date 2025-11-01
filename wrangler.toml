@@ -10,11 +10,11 @@ binding = "AI"
 # Proxy authentication token (can be overridden with secret)
 PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
 
-# Routes configuration (JSON format)
-# Each route maps to an array of providers with fallback support
+# Model routing configuration (JSON format)
+# Each model name maps to an array of providers with fallback support
 ROUTES_CONFIG = '''
 {
-  "/deep-think": [
+  "deep-think": [
     {
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",
@@ -26,7 +26,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
-  "/fast": [
+  "fast": [
     {
       "provider": "google",
       "model": "gemini-2.0-flash-exp",
@@ -38,7 +38,7 @@ ROUTES_CONFIG = '''
       "apiKeys": []
     }
   ],
-  "/nvidia": [
+  "nvidia": [
     {
       "provider": "openai-compatible",
       "baseUrl": "https://integrate.api.nvidia.com/v1",
@@ -46,7 +46,7 @@ ROUTES_CONFIG = '''
       "apiKeys": ["NVIDIA_KEY_1", "NVIDIA_KEY_2"]
     }
   ],
-  "/openai": [
+  "openai": [
     {
       "provider": "openai",
       "model": "gpt-4o",

@@ -2,18 +2,21 @@
  * Example JavaScript/Node.js client using AI Worker Proxy
  */
 
+const BASE_URL = 'https://your-worker.workers.dev/v1/chat/completions';
+const API_KEY = 'your-secret-proxy-token-here';
+
 // Example 1: Simple fetch with streaming
 async function streamingExample() {
   console.log('Example 1: Streaming response');
 
-  const response = await fetch('https://your-worker.workers.dev/deep-think', {
+  const response = await fetch(BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer your-secret-proxy-token-here'
+      'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'any-model-name',
+      model: 'deep-think',  // Model name determines routing
       messages: [
         { role: 'user', content: 'Tell me a short story about a robot.' }
       ],
@@ -55,14 +58,14 @@ async function streamingExample() {
 async function nonStreamingExample() {
   console.log('Example 2: Non-streaming response');
 
-  const response = await fetch('https://your-worker.workers.dev/fast', {
+  const response = await fetch(BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer your-secret-proxy-token-here'
+      'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'any-model-name',
+      model: 'fast',  // Different model = different providers
       messages: [
         { role: 'user', content: 'What is 2+2?' }
       ],
@@ -80,14 +83,14 @@ async function openaiSdkExample() {
   const OpenAI = require('openai');
 
   const client = new OpenAI({
-    baseURL: 'https://your-worker.workers.dev/deep-think',
-    apiKey: 'your-secret-proxy-token-here'
+    baseURL: BASE_URL,
+    apiKey: API_KEY
   });
 
   console.log('Example 3: Using OpenAI SDK');
 
   const stream = await client.chat.completions.create({
-    model: 'any-model-name',
+    model: 'deep-think',  // Model name for routing
     messages: [
       { role: 'user', content: 'Count from 1 to 5.' }
     ],
@@ -107,14 +110,14 @@ async function openaiSdkExample() {
 async function functionCallingExample() {
   console.log('Example 4: Function calling');
 
-  const response = await fetch('https://your-worker.workers.dev/deep-think', {
+  const response = await fetch(BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer your-secret-proxy-token-here'
+      'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'any-model-name',
+      model: 'deep-think',  // Function calling works with any model
       messages: [
         { role: 'user', content: "What's the weather in London?" }
       ],

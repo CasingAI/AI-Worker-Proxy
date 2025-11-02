@@ -29,7 +29,7 @@
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
     "typescript": "^5.3.3",
-    "wrangler": "^3.86.1"
+    "wrangler": "^4.45.3"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

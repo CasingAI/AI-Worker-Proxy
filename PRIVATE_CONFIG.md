@@ -1,19 +1,19 @@
-# Приватная конфигурация для продакшена
+# Private Configuration for Production
 
-## ⚠️ ВАЖНО: Публичный репозиторий
+## ⚠️ IMPORTANT: Public Repository
 
-Поскольку этот репозиторий публичный, **НЕ добавляйте приватные токены в `wrangler.toml`**!
+Since this is a public repository, **DO NOT add private tokens to `wrangler.toml`**!
 
-## 🔒 Как настроить приватный конфиг
+## 🔒 How to Configure Private Config
 
-### Способ 1: Через Cloudflare Dashboard (РЕКОМЕНДУЕТСЯ)
+### Method 1: Via Cloudflare Dashboard (RECOMMENDED)
 
-1. **Откройте Cloudflare Dashboard:**
-   - Перейдите в: `Workers & Pages` → `ai-worker-proxy` → `Settings` → `Variables`
+1. **Open Cloudflare Dashboard:**
+   - Navigate to: `Workers & Pages` → `ai-worker-proxy` → `Settings` → `Variables`
 
-2. **Добавьте Environment Variables:**
+2. **Add Environment Variables:**
 
-   **Переменная: `ROUTES_CONFIG`**
+   **Variable: `ROUTES_CONFIG`**
    ```json
    {
      "your-model": [
@@ -33,61 +33,61 @@
    }
    ```
 
-   **Переменная: `PROXY_AUTH_TOKEN`**
+   **Variable: `PROXY_AUTH_TOKEN`**
    ```
    your-real-secret-token
    ```
 
-3. **Добавьте Secrets (API ключи):**
-   - Нажмите "Add variable" → выберите "Encrypt"
-   - Добавьте все ваши API ключи:
+3. **Add Secrets (API keys):**
+   - Click "Add variable" → select "Encrypt"
+   - Add all your API keys:
      - `ANTHROPIC_KEY_1` = `sk-ant-xxxxx`
      - `GOOGLE_KEY_1` = `AIzaxxxxx`
      - `OPENAI_KEY_1` = `sk-xxxxx`
-     - и т.д.
+     - etc.
 
-4. **Сохраните и деплойте:**
-   - Нажмите "Save and Deploy"
-   - Или просто сохраните - GitHub Actions не перезапишет эти переменные благодаря флагу `--keep-vars`
+4. **Save and Deploy:**
+   - Click "Save and Deploy"
+   - Or just save - GitHub Actions won't overwrite these variables thanks to the `--keep-vars` flag
 
 ---
 
-### Способ 2: Через Wrangler CLI (локально)
+### Method 2: Via Wrangler CLI (locally)
 
 ```bash
-# Добавить Environment Variables
+# Add Environment Variables
 wrangler secret put ANTHROPIC_KEY_1
 wrangler secret put GOOGLE_KEY_1
 wrangler secret put PROXY_AUTH_TOKEN
 
-# Установить ROUTES_CONFIG через dashboard или:
-# Создать отдельный wrangler.production.toml (НЕ коммитить!)
+# Set ROUTES_CONFIG via dashboard or:
+# Create a separate wrangler.production.toml (DO NOT commit!)
 ```
 
 ---
 
-### Способ 3: Cloudflare KV Storage (продвинутый)
+### Method 3: Cloudflare KV Storage (advanced)
 
-Если хотите изменять конфиг без редеплоя:
+If you want to modify config without redeploying:
 
-1. **Создайте KV namespace:**
+1. **Create KV namespace:**
    ```bash
    wrangler kv:namespace create "CONFIG"
    ```
 
-2. **Добавьте в wrangler.toml:**
+2. **Add to wrangler.toml:**
    ```toml
    [[kv_namespaces]]
    binding = "CONFIG"
    id = "your-kv-id"
    ```
 
-3. **Загрузите конфиг в KV:**
+3. **Upload config to KV:**
    ```bash
    wrangler kv:key put --namespace-id=xxx "ROUTES_CONFIG" @config.json
    ```
 
-4. **Измените код для чтения из KV:**
+4. **Modify code to read from KV:**
    ```typescript
    // src/router.ts
    const configStr = await env.CONFIG.get("ROUTES_CONFIG") || env.ROUTES_CONFIG;
@@ -95,9 +95,9 @@ wrangler secret put PROXY_AUTH_TOKEN
 
 ---
 
-## 🚀 GitHub Actions и приватный конфиг
+## 🚀 GitHub Actions and Private Config
 
-GitHub Actions **НЕ перезапишет** ваш приватный конфиг благодаря флагу `--keep-vars`:
+GitHub Actions **WILL NOT overwrite** your private config thanks to the `--keep-vars` flag:
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -106,46 +106,46 @@ GitHub Actions **НЕ перезапишет** ваш приватный кон�
   with:
     apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    command: deploy --keep-vars  # <-- Сохраняет переменные из дашборда
+    command: deploy --keep-vars  # <-- Preserves variables from dashboard
 ```
 
-### Что происходит при деплое:
+### What happens during deployment:
 
-- ✅ **Обновляется:** Код (TypeScript файлы)
-- ✅ **Обновляется:** Зависимости (package.json)
-- ❌ **НЕ обновляется:** Environment Variables из дашборда
-- ❌ **НЕ обновляется:** Secrets
-
----
-
-## 📋 Чеклист настройки
-
-- [ ] Добавлены все Environment Variables в Cloudflare Dashboard
-- [ ] Добавлены все Secrets (API ключи)
-- [ ] Проверено что `ROUTES_CONFIG` содержит ваши приватные роуты
-- [ ] `wrangler.toml` в репо содержит только пример
-- [ ] GitHub Actions имеет флаг `--keep-vars`
-- [ ] Протестирован деплой - приватный конфиг не перезаписывается
+- ✅ **Updated:** Code (TypeScript files)
+- ✅ **Updated:** Dependencies (package.json)
+- ❌ **NOT updated:** Environment Variables from dashboard
+- ❌ **NOT updated:** Secrets
 
 ---
 
-## 🔍 Проверка конфигурации
+## 📋 Setup Checklist
 
-После деплоя проверьте что используется ваш приватный конфиг:
+- [ ] All Environment Variables added to Cloudflare Dashboard
+- [ ] All Secrets (API keys) added
+- [ ] Verified that `ROUTES_CONFIG` contains your private routes
+- [ ] `wrangler.toml` in repo contains example only
+- [ ] GitHub Actions has `--keep-vars` flag
+- [ ] Tested deployment - private config is not overwritten
+
+---
+
+## 🔍 Configuration Verification
+
+After deployment, verify that your private config is being used:
 
 ```bash
-# Проверить переменные
+# Check variables
 wrangler tail
 
-# Или сделайте тестовый запрос
+# Or make a test request
 curl https://your-worker.workers.dev/health
 ```
 
 ---
 
-## ⚙️ Локальная разработка
+## ⚙️ Local Development
 
-Для локальной разработки создайте `.dev.vars` (не коммитится):
+For local development, create `.dev.vars` (not committed):
 
 ```bash
 # .dev.vars
@@ -156,7 +156,7 @@ GOOGLE_KEY_1=AIzaxxxxx
 ROUTES_CONFIG={"test": [{"provider": "anthropic", "model": "claude-opus-4", "apiKeys": ["ANTHROPIC_KEY_1"]}]}
 ```
 
-Затем:
+Then:
 ```bash
 npm run dev
 ```
@@ -165,27 +165,27 @@ npm run dev
 
 ## 🆘 Troubleshooting
 
-### Конфиг перезаписывается при деплое
+### Config gets overwritten on deploy
 
-**Проблема:** GitHub Actions перезаписывает ваш приватный конфиг
+**Problem:** GitHub Actions overwrites your private config
 
-**Решение:**
-1. Проверьте что в `.github/workflows/deploy.yml` есть `command: deploy --keep-vars`
-2. Если нет - добавьте и закоммитьте
-3. Пересоздайте Environment Variables в дашборде
+**Solution:**
+1. Check that `.github/workflows/deploy.yml` has `command: deploy --keep-vars`
+2. If not - add it and commit
+3. Recreate Environment Variables in dashboard
 
-### Переменные не читаются
+### Variables are not being read
 
-**Проблема:** Worker не видит переменные из дашборда
+**Problem:** Worker doesn't see variables from dashboard
 
-**Решение:**
-1. Убедитесь что переменные добавлены именно в Environment Variables (не в Secrets для vars)
-2. Secrets используйте только для API ключей
-3. После изменения переменных в дашборде нажмите "Save and Deploy"
+**Solution:**
+1. Make sure variables are added to Environment Variables (not in Secrets for vars)
+2. Use Secrets only for API keys
+3. After changing variables in dashboard, click "Save and Deploy"
 
 ---
 
-## 📖 Дополнительно
+## 📖 Additional Resources
 
 - [Cloudflare Environment Variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
 - [Wrangler Secrets](https://developers.cloudflare.com/workers/wrangler/commands/#secret)

@@ -22,7 +22,7 @@ OpenAI-compatible proxy for multiple AI providers on Cloudflare Workers. Route r
 | Google Gemini | `google` | ✅ | ✅ | Uses official SDK |
 | OpenAI | `openai` | ✅ | ✅ | Uses official SDK |
 | Custom OpenAI-compatible | `openai-compatible` | ✅ | ✅ | NVIDIA AI, etc. |
-| Cloudflare AI Workers | `cloudflare-ai` | ✅ | ❌ | Converts to OpenAI format |
+| Cloudflare AI Workers | `cloudflare-ai` | ✅ | ✅ | Converts to OpenAI format |
 
 ## Quick Start
 

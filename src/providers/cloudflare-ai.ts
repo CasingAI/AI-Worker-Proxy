@@ -1,5 +1,5 @@
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse, OpenAIMessage } from '../types';
+import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, Tool, ToolCall } from '../types';
 import { createOpenAIResponse, createStreamChunk } from '../utils/response-mapper';
 
 export class CloudflareAIProvider extends BaseProvider {
@@ -27,6 +27,11 @@ export class CloudflareAIProvider extends BaseProvider {
         stream: request.stream || false,
       };
 
+      // Add tools if present
+      if (request.tools && request.tools.length > 0) {
+        params.tools = this.convertTools(request.tools);
+      }
+
       if (request.stream) {
         return this.handleStream(params);
       } else {
@@ -49,6 +54,13 @@ export class CloudflareAIProvider extends BaseProvider {
     }
 
     const openAIResponse = createOpenAIResponse(content, this.model);
+
+    // Handle tool calls if present
+    if (response.tool_calls && response.tool_calls.length > 0) {
+      openAIResponse.choices[0].message.tool_calls = this.convertToolCalls(response.tool_calls);
+      openAIResponse.choices[0].message.content = null; // No content when there are tool calls
+      openAIResponse.choices[0].finish_reason = 'tool_calls';
+    }
 
     return {
       success: true,
@@ -78,17 +90,37 @@ export class CloudflareAIProvider extends BaseProvider {
 
           // Parse the chunk - Cloudflare AI might send different formats
           let text = '';
+          let toolCalls: any[] | undefined;
+
           if (typeof value === 'string') {
             text = value;
           } else if (value.response) {
             text = value.response;
+            // Check for tool calls in streaming response
+            if (value.tool_calls) {
+              toolCalls = value.tool_calls;
+            }
           } else {
             // Try to decode if it's bytes
             const decoder = new TextDecoder();
             text = decoder.decode(value);
           }
 
-          if (text) {
+          // Send tool calls if present
+          if (toolCalls && toolCalls.length > 0) {
+            const delta = isFirst
+              ? {
+                  role: 'assistant' as const,
+                  tool_calls: this.convertToolCalls(toolCalls),
+                }
+              : {
+                  tool_calls: this.convertToolCalls(toolCalls),
+                };
+
+            const chunk = createStreamChunk(delta, this.model);
+            await writer.write(encoder.encode(chunk));
+            isFirst = false;
+          } else if (text) {
             const delta = isFirst
               ? { content: text, role: 'assistant' as const }
               : { content: text };
@@ -100,7 +132,8 @@ export class CloudflareAIProvider extends BaseProvider {
         }
 
         // Send final chunk
-        const finishChunk = createStreamChunk({}, this.model, 'stop');
+        const finishReason = params.tools ? 'tool_calls' : 'stop';
+        const finishChunk = createStreamChunk({}, this.model, finishReason);
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {
@@ -117,11 +150,67 @@ export class CloudflareAIProvider extends BaseProvider {
   }
 
   private convertMessages(messages: OpenAIMessage[]): any[] {
-    return messages
-      .filter((msg) => msg.role !== 'system') // CF AI doesn't support system messages separately
-      .map((msg) => ({
-        role: msg.role === 'assistant' ? 'assistant' : 'user',
+    return messages.map((msg) => {
+      // Handle tool role -> user with tool content
+      if (msg.role === 'tool') {
+        return {
+          role: 'user',
+          content: msg.content || '',
+        };
+      }
+
+      // Handle assistant messages with tool calls
+      if (msg.role === 'assistant' && msg.tool_calls) {
+        // For messages with tool calls, we might need to format them specially
+        // For now, just return the content
+        return {
+          role: 'assistant',
+          content: msg.content || '',
+        };
+      }
+
+      return {
+        role: msg.role === 'system' ? 'user' : msg.role, // CF AI treats system as user
         content: msg.content || '',
-      }));
+      };
+    });
+  }
+
+  // Convert OpenAI tools format to Cloudflare AI format
+  private convertTools(tools: Tool[]): any[] {
+    return tools.map((tool) => {
+      // Cloudflare AI supports both formats:
+      // 1. Direct format: { name, description, parameters }
+      // 2. OpenAI format: { type: "function", function: { name, description, parameters } }
+
+      if (tool.type === 'function') {
+        // Return OpenAI-compatible format (Cloudflare supports this)
+        return {
+          type: 'function',
+          function: {
+            name: tool.function.name,
+            description: tool.function.description || '',
+            parameters: tool.function.parameters || {
+              type: 'object',
+              properties: {},
+            },
+          },
+        };
+      }
+
+      return tool;
+    });
+  }
+
+  // Convert Cloudflare AI tool_calls to OpenAI format
+  private convertToolCalls(cfToolCalls: any[]): ToolCall[] {
+    return cfToolCalls.map((call, index) => ({
+      id: `call_${Date.now()}_${index}`, // Generate ID as CF doesn't provide one
+      type: 'function' as const,
+      function: {
+        name: call.name,
+        arguments: JSON.stringify(call.arguments),
+      },
+    }));
   }
 }

@@ -34,12 +34,11 @@ cd AI-Worker-Proxy
 npm install
 ```
 
-### 2. Configure Model Routing
+### 2. Configure via GitHub
 
-**For Production (Cloudflare Dashboard):**
-
-1. Go to: `Cloudflare Dashboard` → `Workers & Pages` → `ai-worker-proxy` → `Settings` → `Variables`
-2. Add Environment Variable `ROUTES_CONFIG`:
+**Add GitHub Variable:**
+1. Go to your repo → Settings → Secrets and variables → Actions → **Variables** tab
+2. Add `ROUTES_CONFIG`:
    ```json
    {
      "deep-think": [
@@ -58,54 +57,37 @@ npm install
      ]
    }
    ```
-3. See `wrangler.toml` for more configuration examples
+
+**Add GitHub Secrets:**
+1. Go to **Secrets** tab
+2. Add:
+   - `CLOUDFLARE_API_TOKEN`
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - `PROXY_AUTH_TOKEN`
+   - `ANTHROPIC_KEY_1`, `GOOGLE_KEY_1`, etc.
 
 **For Local Development:**
-
 Create `.dev.vars` file (see `.dev.vars.example` for format)
 
-**Note**: Model names (e.g., `"deep-think"`, `"fast"`) are used in your API requests, not URL paths.
-
-### 3. Set API Keys and Auth Token
-
-**Via Cloudflare Dashboard (Recommended):**
-
-1. Go to: `Workers & Pages` → `ai-worker-proxy` → `Settings` → `Variables`
-2. Click "Add variable" → Select "Encrypt" for secrets:
-   - `ANTHROPIC_KEY_1` = `sk-ant-xxxxx`
-   - `GOOGLE_KEY_1` = `AIzaxxxxx`
-   - `OPENAI_KEY_1` = `sk-xxxxx`
-   - `PROXY_AUTH_TOKEN` = `your-secret-token`
-
-**Or via Wrangler CLI:**
+### 3. Deploy
 
 ```bash
-wrangler secret put ANTHROPIC_KEY_1
-wrangler secret put GOOGLE_KEY_1
-wrangler secret put PROXY_AUTH_TOKEN
+git push origin main
 ```
 
-### 4. Deploy
-
-```bash
-# Deploy to Cloudflare Workers
-npm run deploy
-
-# Or run locally for development
-npm run dev
-```
+GitHub Actions will deploy automatically.
 
 ## Configuration
 
 ### ⚠️ Public Repository - Private Config
 
-**IMPORTANT**: This is a public repository. **DO NOT** commit your private API keys or production configuration to `wrangler.toml`!
+**IMPORTANT**: This is a public repository. **DO NOT** commit your private API keys or production configuration!
 
 For production/private configuration:
 - 📖 **See [PRIVATE_CONFIG.md](PRIVATE_CONFIG.md)** for detailed instructions
-- 🔒 Set environment variables in **Cloudflare Dashboard** → Settings → Variables
-- ✅ The `wrangler.toml` has `keep_vars = true` to prevent overwriting your Dashboard config
-- 📋 Example configuration is in `wrangler.toml` [vars] section (for reference only)
+- 🔧 `ROUTES_CONFIG` → GitHub Variable (easy to update, not encrypted)
+- 🔒 `PROXY_AUTH_TOKEN` + API keys → GitHub Secrets (encrypted)
+- ✅ No secrets in wrangler.toml - everything via GitHub Actions
 
 ### Model Routing Configuration
 

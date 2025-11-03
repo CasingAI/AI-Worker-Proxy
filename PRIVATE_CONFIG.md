@@ -1,90 +1,94 @@
-# Private Configuration for Production
+# Private Configuration Guide
 
-## ⚠️ IMPORTANT: Public Repository
+## 🎯 How It Works
 
-This is a **public repository**. The `wrangler.toml` contains **example configuration only**.
+- **`ROUTES_CONFIG`** → GitHub Variable (not secret) → deployed as Cloudflare env var
+- **`PROXY_AUTH_TOKEN`** + API keys → GitHub Secrets → deployed as Cloudflare secrets
 
-Your real API keys and production routes should be set in **Cloudflare Dashboard**.
+This setup ensures:
+- ✅ `ROUTES_CONFIG` can be easily updated without re-entering secrets
+- ✅ Sensitive tokens remain encrypted as secrets
+- ✅ No config in wrangler.toml (stays public-safe)
 
 ---
 
-## 🔒 How It Works
+## 📝 Setup Instructions
 
-The `wrangler.toml` has:
+### Step 1: Add GitHub Variable
 
-```toml
-# Preserve Dashboard variables during deployment
-keep_vars = true
-
-[vars]
-# Example configuration (for reference only)
-PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
-ROUTES_CONFIG = '''{ ... example routes ... }'''
+1. Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **Variables** tab
+2. Click **"New repository variable"**
+3. Name: `ROUTES_CONFIG`
+4. Value (JSON, can be multiline):
+```json
+{
+  "deep-think": [
+    {
+      "provider": "anthropic",
+      "model": "claude-opus-4-20250514",
+      "apiKeys": ["ANTHROPIC_KEY_1"]
+    }
+  ],
+  "fast": [
+    {
+      "provider": "google",
+      "model": "gemini-2.0-flash-exp",
+      "apiKeys": ["GOOGLE_KEY_1"]
+    }
+  ]
+}
 ```
 
-**Key point:** `keep_vars = true` means:
-- ✅ Dashboard variables are **NEVER** overwritten during deployment
-- ✅ Dashboard values take **precedence** over wrangler.toml [vars]
-- ✅ The [vars] in wrangler.toml serve as **examples only**
+### Step 2: Add GitHub Secrets
 
----
+1. Go to **Secrets** tab (next to Variables)
+2. Click **"New repository secret"**
+3. Add these secrets:
 
-## 🚀 Setup for Production
+**Required:**
+- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
+- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
+- `PROXY_AUTH_TOKEN` - Your proxy authentication token
 
-### Step 1: Set Variables in Cloudflare Dashboard
+**API Keys (as needed):**
+- `ANTHROPIC_KEY_1` = `sk-ant-xxxxx`
+- `GOOGLE_KEY_1` = `AIzaxxxxx`
+- `OPENAI_KEY_1` = `sk-xxxxx`
+- `NVIDIA_KEY_1` = `nvapi-xxxxx`
+- `GROQ_KEY_1` = `gsk_xxxxx`
 
-1. Open: **Cloudflare Dashboard** → **Workers & Pages** → **ai-worker-proxy** → **Settings** → **Variables**
-
-2. Add Environment Variable: **`ROUTES_CONFIG`**
-   ```json
-   {
-     "your-model": [
-       {
-         "provider": "anthropic",
-         "model": "claude-opus-4-20250514",
-         "apiKeys": ["ANTHROPIC_KEY_1"]
-       }
-     ],
-     "fast": [
-       {
-         "provider": "google",
-         "model": "gemini-2.0-flash-exp",
-         "apiKeys": ["GOOGLE_KEY_1"]
-       }
-     ]
-   }
-   ```
-
-3. Add Environment Variable: **`PROXY_AUTH_TOKEN`**
-   ```
-   your-real-secret-token
-   ```
-
-4. Add Encrypted Variables (Secrets):
-   - Click **"Add variable"** → select **"Encrypt"**
-   - Add your API keys:
-     - `ANTHROPIC_KEY_1` = `sk-ant-xxxxx`
-     - `GOOGLE_KEY_1` = `AIzaxxxxx`
-     - `OPENAI_KEY_1` = `sk-xxxxx`
-     - etc.
-
-5. Click **"Save and Deploy"**
-
-### Step 2: Deploy
-
-Push to GitHub - GitHub Actions will deploy your code without touching Dashboard variables.
+### Step 3: Push to Main
 
 ```bash
-git push
+git push origin main
 ```
 
-**That's it!** Your private config is safe. `keep_vars = true` protects it.
+GitHub Actions will:
+1. Add `ROUTES_CONFIG` to wrangler.toml temporarily
+2. Deploy code + ROUTES_CONFIG as env var
+3. Set secrets using `wrangler secret put`
 
 ---
 
-## ⚙️ Local Development
+## 🔄 Updating Configuration
 
-Create `.dev.vars` file (not committed to git):
+### Update Routes (ROUTES_CONFIG)
+
+1. Edit the variable in GitHub: Settings → Secrets and variables → Actions → Variables → ROUTES_CONFIG
+2. Push any commit to main (or re-run the workflow)
+3. Done! New routes deployed.
+
+### Update Secrets (API Keys, Auth Token)
+
+1. Edit the secret in GitHub: Settings → Secrets and variables → Actions → Secrets
+2. Push any commit to main (or re-run the workflow)
+3. Done! Secrets updated.
+
+---
+
+## 🏠 Local Development
+
+Create `.dev.vars` file (DO NOT commit):
 
 ```bash
 # .dev.vars
@@ -92,7 +96,7 @@ PROXY_AUTH_TOKEN=local-dev-token
 ANTHROPIC_KEY_1=sk-ant-xxxxx
 GOOGLE_KEY_1=AIzaxxxxx
 
-ROUTES_CONFIG={"test": [{"provider": "anthropic", "model": "claude-opus-4", "apiKeys": ["ANTHROPIC_KEY_1"]}]}
+ROUTES_CONFIG={"test":[{"provider":"anthropic","model":"claude-opus-4","apiKeys":["ANTHROPIC_KEY_1"]}]}
 ```
 
 Run locally:
@@ -104,42 +108,61 @@ npm run dev
 
 ## 🆘 Troubleshooting
 
-### Problem: Config still gets overwritten
+### GitHub Actions fails with "vars.ROUTES_CONFIG not found"
 
 **Solution:**
-1. Verify `wrangler.toml` has `keep_vars = true` (should be line 7)
-2. Make sure you set variables in Dashboard, not just locally
-3. After setting Dashboard variables, click "Save and Deploy"
+1. Make sure you added ROUTES_CONFIG as a **Variable** (not Secret)
+2. Go to Settings → Secrets and variables → Actions → **Variables** tab
+3. Variables and Secrets are different tabs!
 
-### Problem: Variables not being read
-
-**Solution:**
-1. Environment variables (like `ROUTES_CONFIG`) go in "Environment Variables" section
-2. API keys should be "Encrypted" (marked as Secret)
-3. After changing Dashboard variables, click "Save and Deploy"
-4. Wait ~30 seconds for changes to propagate
-
-### Problem: Want to test without Dashboard
+### Worker returns "Invalid ROUTES_CONFIG"
 
 **Solution:**
-1. Edit `wrangler.toml` [vars] section with your test config
-2. Run `npm run dev` - it will use wrangler.toml values
-3. Don't commit your changes to wrangler.toml!
-4. Before pushing: `git restore wrangler.toml`
+1. Check ROUTES_CONFIG is valid JSON
+2. Make sure all API keys referenced in ROUTES_CONFIG are added as Secrets
+3. Check GitHub Actions logs to see what was deployed
+
+### Want to add a new API provider
+
+**Solution:**
+1. Add the API key to GitHub Secrets (e.g., `DEEPSEEK_KEY_1`)
+2. Update `.github/workflows/deploy.yml` to include it in `secrets:` list and `env:` section
+3. Update `ROUTES_CONFIG` variable with the new route
+4. Push to deploy
 
 ---
 
 ## 📋 Checklist
 
-- [ ] `wrangler.toml` has `keep_vars = true` ✅
-- [ ] All production variables set in Cloudflare Dashboard
-- [ ] All API keys added as Encrypted variables
-- [ ] Tested deployment - Dashboard config NOT overwritten
+- [ ] `ROUTES_CONFIG` added as GitHub **Variable** (not Secret)
+- [ ] `CLOUDFLARE_API_TOKEN` added as GitHub Secret
+- [ ] `CLOUDFLARE_ACCOUNT_ID` added as GitHub Secret
+- [ ] `PROXY_AUTH_TOKEN` added as GitHub Secret
+- [ ] All API keys added as GitHub Secrets
 - [ ] `.dev.vars` created for local development (not committed)
+- [ ] Pushed to main and verified deployment succeeded
 
 ---
 
-## 📖 Resources
+## 📖 Why This Works
 
-- [Cloudflare Environment Variables Docs](https://developers.cloudflare.com/workers/configuration/environment-variables/)
-- [Wrangler Configuration Docs](https://developers.cloudflare.com/workers/wrangler/configuration/)
+**Before deployment**, GitHub Actions injects ROUTES_CONFIG into wrangler.toml:
+```toml
+[vars]
+ROUTES_CONFIG = '''{ your routes }'''
+```
+
+This file is only used during deployment and never committed to git.
+
+**Secrets** are uploaded using `wrangler secret put`, which:
+- Encrypts them in Cloudflare
+- Persists them across deployments
+- Never gets overwritten
+
+**Result:** Clean separation between public code and private config.
+
+## 📚 References
+
+- [GitHub Actions Variables](https://docs.github.com/en/actions/learn-github-actions/variables)
+- [GitHub Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- [Cloudflare Secrets](https://developers.cloudflare.com/workers/wrangler/commands/#secret)

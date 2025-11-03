@@ -54,8 +54,30 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Add ROUTES_CONFIG to wrangler.toml
+        run: |
+          cat >> wrangler.toml << 'EOF'
+
+          [vars]
+          ROUTES_CONFIG = '''${{ vars.ROUTES_CONFIG }}'''
+          EOF
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          secrets: |
+            PROXY_AUTH_TOKEN
+            ANTHROPIC_KEY_1
+            GOOGLE_KEY_1
+            OPENAI_KEY_1
+            NVIDIA_KEY_1
+            GROQ_KEY_1
+        env:
+          PROXY_AUTH_TOKEN: ${{ secrets.PROXY_AUTH_TOKEN }}
+          ANTHROPIC_KEY_1: ${{ secrets.ANTHROPIC_KEY_1 }}
+          GOOGLE_KEY_1: ${{ secrets.GOOGLE_KEY_1 }}
+          OPENAI_KEY_1: ${{ secrets.OPENAI_KEY_1 }}
+          NVIDIA_KEY_1: ${{ secrets.NVIDIA_KEY_1 }}
+          GROQ_KEY_1: ${{ secrets.GROQ_KEY_1 }}

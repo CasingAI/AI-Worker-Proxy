@@ -94,6 +94,16 @@ npm run dev
 
 ## Configuration
 
+### ⚠️ Public Repository - Private Config
+
+**IMPORTANT**: This is a public repository. **DO NOT** commit your private API keys or production configuration to `wrangler.toml`!
+
+For production/private configuration:
+- 📖 **See [PRIVATE_CONFIG.md](PRIVATE_CONFIG.md)** for detailed instructions
+- 🔒 Set environment variables in **Cloudflare Dashboard** → Settings → Variables
+- ✅ GitHub Actions uses `--keep-vars` flag to preserve your dashboard config
+- 🚫 The `wrangler.toml` file contains **example configuration only**
+
 ### Model Routing Configuration
 
 Each model name maps to an array of provider configurations. The proxy will try providers in order until one succeeds.

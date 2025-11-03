@@ -6,12 +6,27 @@ compatibility_date = "2024-01-01"
 [ai]
 binding = "AI"
 
+# ====================================================================================
+# IMPORTANT: This is a PUBLIC example configuration for the repository
+# ====================================================================================
+# For PRODUCTION/PRIVATE use:
+# 1. Set environment variables in Cloudflare Dashboard:
+#    Workers & Pages → your-worker → Settings → Variables
+# 2. Add ROUTES_CONFIG and PROXY_AUTH_TOKEN there
+# 3. GitHub Actions uses --keep-vars flag to preserve your dashboard config
+#
+# The configuration below is used for:
+# - Local development (wrangler dev)
+# - As an example for users
+# - Will NOT override your dashboard settings when deployed from GitHub Actions
+# ====================================================================================
+
 [vars]
-# Proxy authentication token (can be overridden with secret)
+# Proxy authentication token (EXAMPLE - set real token in Cloudflare Dashboard)
 PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
 
-# Model routing configuration (JSON format)
-# Each model name maps to an array of providers with fallback support
+# Model routing configuration - EXAMPLE ONLY
+# Configure your real routes in Cloudflare Dashboard → Settings → Variables
 ROUTES_CONFIG = '''
 {
   "deep-think": [

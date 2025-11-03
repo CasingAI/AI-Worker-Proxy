@@ -2,10 +2,6 @@ name = "ai-worker-proxy"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
-# IMPORTANT: Preserve environment variables set in Cloudflare Dashboard
-# This prevents wrangler from overwriting your production config during deployment
-keep_vars = true
-
 # Cloudflare AI binding (optional)
 [ai]
 binding = "AI"
@@ -13,15 +9,13 @@ binding = "AI"
 # ====================================================================================
 # EXAMPLE CONFIGURATION
 # ====================================================================================
-# For PRODUCTION: Set your real values in Cloudflare Dashboard
-# For LOCAL DEV: Create .dev.vars file (see .dev.vars.example)
+# This [vars] section contains example configuration.
+# GitHub Actions will REPLACE it with real ROUTES_CONFIG from GitHub Variable.
+# Secrets (PROXY_AUTH_TOKEN, API keys) are set in Cloudflare Dashboard manually.
 # ====================================================================================
 
 [vars]
-# Proxy authentication token
-PROXY_AUTH_TOKEN = "your-secret-proxy-token-here"
-
-# Model routing configuration
+# Model routing configuration (example - will be replaced by GitHub Actions)
 ROUTES_CONFIG = '''
 {
   "deep-think": [
@@ -29,11 +23,6 @@ ROUTES_CONFIG = '''
       "provider": "anthropic",
       "model": "claude-opus-4-20250514",
       "apiKeys": ["ANTHROPIC_KEY_1", "ANTHROPIC_KEY_2"]
-    },
-    {
-      "provider": "google",
-      "model": "gemini-2.0-flash-thinking-exp-01-21",
-      "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
   "fast": [
@@ -41,11 +30,6 @@ ROUTES_CONFIG = '''
       "provider": "google",
       "model": "gemini-2.0-flash-exp",
       "apiKeys": ["GOOGLE_KEY_1"]
-    },
-    {
-      "provider": "cloudflare-ai",
-      "model": "@cf/meta/llama-3.1-8b-instruct",
-      "apiKeys": []
     }
   ],
   "nvidia": [
@@ -53,32 +37,15 @@ ROUTES_CONFIG = '''
       "provider": "openai-compatible",
       "baseUrl": "https://integrate.api.nvidia.com/v1",
       "model": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "apiKeys": ["NVIDIA_KEY_1", "NVIDIA_KEY_2"]
-    }
-  ],
-  "openai": [
-    {
-      "provider": "openai",
-      "model": "gpt-4o",
-      "apiKeys": ["OPENAI_KEY_1"]
-    }
-  ],
-  "groq": [
-    {
-      "provider": "openai-compatible",
-      "baseUrl": "https://api.groq.com/openai/v1",
-      "model": "llama-3.3-70b-versatile",
-      "apiKeys": ["GROQ_KEY_1"]
+      "apiKeys": ["NVIDIA_KEY_1"]
     }
   ]
 }
 '''
 
-# API Keys (add these as Secrets in Cloudflare Dashboard):
-# - ANTHROPIC_KEY_1
-# - ANTHROPIC_KEY_2
+# Secrets to set in Cloudflare Dashboard:
+# - PROXY_AUTH_TOKEN
+# - ANTHROPIC_KEY_1, ANTHROPIC_KEY_2
 # - GOOGLE_KEY_1
 # - NVIDIA_KEY_1
-# - NVIDIA_KEY_2
-# - OPENAI_KEY_1
-# - GROQ_KEY_1
+# - OPENAI_KEY_1, GROQ_KEY_1, etc.

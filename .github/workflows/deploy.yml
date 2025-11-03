@@ -51,6 +51,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Replace ROUTES_CONFIG in wrangler.toml
+        run: |
+          # Remove existing [vars] section and everything after it
+          sed -i '/^\[vars\]/,$d' wrangler.toml
+
+          # Add new [vars] section with GitHub Variable
+          cat >> wrangler.toml << 'EOF'
+
+          [vars]
+          ROUTES_CONFIG = '''${{ vars.ROUTES_CONFIG }}'''
+          EOF
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

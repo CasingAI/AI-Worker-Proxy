@@ -48,7 +48,7 @@ Since this is a public repository, **DO NOT add private tokens to `wrangler.toml
 
 4. **Save and Deploy:**
    - Click "Save and Deploy"
-   - Or just save - GitHub Actions won't overwrite these variables thanks to the `--keep-vars` flag
+   - Or just save - GitHub Actions won't overwrite these variables thanks to `keep_vars = true` in wrangler.toml
 
 ---
 
@@ -97,7 +97,7 @@ If you want to modify config without redeploying:
 
 ## 🚀 GitHub Actions and Private Config
 
-GitHub Actions **WILL NOT overwrite** your private config because `wrangler.toml` has **NO [vars] section**:
+GitHub Actions **WILL NOT overwrite** your private config because `wrangler.toml` has `keep_vars = true`:
 
 ```toml
 # wrangler.toml
@@ -105,13 +105,16 @@ name = "ai-worker-proxy"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+# Preserve environment variables set in Cloudflare Dashboard
+keep_vars = true
+
 [ai]
 binding = "AI"
 
 # No [vars] section - all configuration via Dashboard or .dev.vars
 ```
 
-This ensures your Cloudflare Dashboard variables are **never** overwritten during deployment.
+The `keep_vars = true` setting ensures your Cloudflare Dashboard variables are **never** overwritten during deployment.
 
 ### What happens during deployment:
 
@@ -127,8 +130,8 @@ This ensures your Cloudflare Dashboard variables are **never** overwritten durin
 - [ ] All Environment Variables added to Cloudflare Dashboard
 - [ ] All Secrets (API keys) added
 - [ ] Verified that `ROUTES_CONFIG` contains your private routes
-- [ ] `wrangler.toml` in repo contains example only
-- [ ] GitHub Actions has `--keep-vars` flag
+- [ ] `wrangler.toml` has `keep_vars = true`
+- [ ] `wrangler.toml` has NO [vars] section
 - [ ] Tested deployment - private config is not overwritten
 
 ---
@@ -174,9 +177,10 @@ npm run dev
 **Problem:** GitHub Actions overwrites your private config
 
 **Solution:**
-1. Make sure `wrangler.toml` has **NO [vars] section**
-2. All configuration should be in Cloudflare Dashboard only
-3. For local dev, use `.dev.vars` file (not committed)
+1. Make sure `wrangler.toml` has `keep_vars = true`
+2. Make sure `wrangler.toml` has **NO [vars] section**
+3. All configuration should be in Cloudflare Dashboard only
+4. For local dev, use `.dev.vars` file (not committed)
 
 ### Variables are not being read
 

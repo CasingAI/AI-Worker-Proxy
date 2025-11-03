@@ -84,9 +84,9 @@ export interface RouteConfig {
 // Environment bindings
 export interface Env {
   AI?: any; // Cloudflare AI binding
-  PROXY_AUTH_TOKEN: string;
-  ROUTES_CONFIG: string;
-  [key: string]: any; // Dynamic API keys
+  PROXY_AUTH_TOKEN: string; // Cloudflare Secret (set in Dashboard)
+  ROUTES_CONFIG: string; // Environment variable (injected from GitHub Variable)
+  [key: string]: any; // Dynamic API keys (Cloudflare Secrets, set in Dashboard)
 }
 
 // Provider response

@@ -54,8 +54,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Add ROUTES_CONFIG to wrangler.toml
+      - name: Replace ROUTES_CONFIG in wrangler.toml
         run: |
+          # Remove existing [vars] section and everything after it
+          sed -i '/^\[vars\]/,$d' wrangler.toml
+
+          # Add new [vars] section with GitHub Variable
           cat >> wrangler.toml << 'EOF'
 
           [vars]
@@ -67,17 +71,3 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          secrets: |
-            PROXY_AUTH_TOKEN
-            ANTHROPIC_KEY_1
-            GOOGLE_KEY_1
-            OPENAI_KEY_1
-            NVIDIA_KEY_1
-            GROQ_KEY_1
-        env:
-          PROXY_AUTH_TOKEN: ${{ secrets.PROXY_AUTH_TOKEN }}
-          ANTHROPIC_KEY_1: ${{ secrets.ANTHROPIC_KEY_1 }}
-          GOOGLE_KEY_1: ${{ secrets.GOOGLE_KEY_1 }}
-          OPENAI_KEY_1: ${{ secrets.OPENAI_KEY_1 }}
-          NVIDIA_KEY_1: ${{ secrets.NVIDIA_KEY_1 }}
-          GROQ_KEY_1: ${{ secrets.GROQ_KEY_1 }}

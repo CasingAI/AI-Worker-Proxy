@@ -7,16 +7,45 @@ compatibility_date = "2024-01-01"
 binding = "AI"
 
 # ====================================================================================
-# IMPORTANT: No [vars] section here!
+# EXAMPLE CONFIGURATION
 # ====================================================================================
-# Having [vars] section WILL OVERWRITE your Cloudflare Dashboard variables.
-# Even with keep_vars=true, variables defined in [vars] will be overwritten.
-#
-# For PRODUCTION: Set variables in Cloudflare Dashboard
-#   Dashboard → Workers & Pages → ai-worker-proxy → Settings → Variables
-#
-# For LOCAL DEV: Create .dev.vars file
-#   See .dev.vars.example for format
-#
-# For EXAMPLES: See wrangler.toml.example
+# This [vars] section contains example configuration.
+# GitHub Actions will REPLACE it with real ROUTES_CONFIG from GitHub Variable.
+# Secrets (PROXY_AUTH_TOKEN, API keys) are set in Cloudflare Dashboard manually.
 # ====================================================================================
+
+[vars]
+# Model routing configuration (example - will be replaced by GitHub Actions)
+ROUTES_CONFIG = '''
+{
+  "deep-think": [
+    {
+      "provider": "anthropic",
+      "model": "claude-opus-4-20250514",
+      "apiKeys": ["ANTHROPIC_KEY_1", "ANTHROPIC_KEY_2"]
+    }
+  ],
+  "fast": [
+    {
+      "provider": "google",
+      "model": "gemini-2.0-flash-exp",
+      "apiKeys": ["GOOGLE_KEY_1"]
+    }
+  ],
+  "nvidia": [
+    {
+      "provider": "openai-compatible",
+      "baseUrl": "https://integrate.api.nvidia.com/v1",
+      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
+      "apiKeys": ["NVIDIA_KEY_1"]
+    }
+  ]
+}
+'''
+
+# Secrets to set in Cloudflare Dashboard:
+# - PROXY_AUTH_TOKEN
+# - ANTHROPIC_KEY_1, ANTHROPIC_KEY_2
+# - GOOGLE_KEY_1
+# - NVIDIA_KEY_1
+# - OPENAI_KEY_1, GROQ_KEY_1, etc.

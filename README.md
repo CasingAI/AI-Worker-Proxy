@@ -34,7 +34,20 @@ cd AI-Worker-Proxy
 npm install
 ```
 
-### 2. Configure via GitHub
+### 2. Configure Secrets (Cloudflare Dashboard)
+
+**Add secrets to Cloudflare Dashboard:**
+1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **ai-worker-proxy** → **Settings** → **Variables**
+2. Click "Add variable" → Select **"Encrypt"**
+3. Add:
+   - `PROXY_AUTH_TOKEN` = your auth token
+   - `ANTHROPIC_KEY_1` = sk-ant-xxxxx
+   - `GOOGLE_KEY_1` = AIzaxxxxx
+   - etc.
+
+**IMPORTANT:** These secrets persist across deployments and are never overwritten.
+
+### 3. Configure Routes (GitHub Variable)
 
 **Add GitHub Variable:**
 1. Go to your repo → Settings → Secrets and variables → Actions → **Variables** tab
@@ -58,18 +71,16 @@ npm install
    }
    ```
 
-**Add GitHub Secrets:**
+**Add GitHub Secrets (for Cloudflare auth):**
 1. Go to **Secrets** tab
 2. Add:
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
-   - `PROXY_AUTH_TOKEN`
-   - `ANTHROPIC_KEY_1`, `GOOGLE_KEY_1`, etc.
 
 **For Local Development:**
 Create `.dev.vars` file (see `.dev.vars.example` for format)
 
-### 3. Deploy
+### 4. Deploy
 
 ```bash
 git push origin main
@@ -85,9 +96,9 @@ GitHub Actions will deploy automatically.
 
 For production/private configuration:
 - 📖 **See [PRIVATE_CONFIG.md](PRIVATE_CONFIG.md)** for detailed instructions
-- 🔧 `ROUTES_CONFIG` → GitHub Variable (easy to update, not encrypted)
-- 🔒 `PROXY_AUTH_TOKEN` + API keys → GitHub Secrets (encrypted)
-- ✅ No secrets in wrangler.toml - everything via GitHub Actions
+- 🔧 `ROUTES_CONFIG` → GitHub Variable (replaced in wrangler.toml during deploy)
+- 🔒 Secrets (PROXY_AUTH_TOKEN, API keys) → Cloudflare Dashboard (persist forever, never overwritten)
+- ✅ wrangler.toml contains example config only
 
 ### Model Routing Configuration
 

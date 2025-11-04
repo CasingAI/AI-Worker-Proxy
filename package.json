@@ -16,11 +16,35 @@
     "ai",
     "proxy",
     "openai",
+    "proxy",
+    "ai",
+    "api-gateway",
+    "cloudflare-workers",
     "anthropic",
+    "claude",
     "gemini",
-    "llm"
+    "gpt-4",
+    "openai-api",
+    "ai-proxy",
+    "multi-provider",
+    "failover",
+    "load-balancer",
+    "serverless",
+    "edge-computing",
+    "openai-compatible",
+    "llm",
+    "chatgpt",
+    "ai-gateway"
   ],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zxcnoname666/AI-Worker-Proxy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zxcnoname666/AI-Worker-Proxy/issues"
+  },
+  "homepage": "https://github.com/zxcnoname666/AI-Worker-Proxy#readme",
+  "author": "noname",
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",

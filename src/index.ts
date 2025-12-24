@@ -37,6 +37,25 @@ export default {
         );
       }
 
+      // Models list endpoint
+      if ((path === '/models' || path === '/v1/models') && request.method === 'GET') {
+        const router = new Router(env);
+        const models = router.getAvailableModels();
+
+        return new Response(
+          JSON.stringify({
+            object: 'list',
+            data: models,
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...getCORSHeaders(),
+            },
+          }
+        );
+      }
+
       // Only accept POST requests for chat completions
       if (request.method !== 'POST') {
         throw new ProxyError('Method not allowed', 405);

@@ -10,6 +10,24 @@ export class Router {
   }
 
   /**
+   * Get list of available models
+   */
+  getAvailableModels(): Array<{
+    id: string;
+    object: string;
+    owned_by: string;
+    permission: string[];
+  }> {
+    const models = Object.keys(this.routes);
+    return models.map((model) => ({
+      id: model,
+      object: 'model',
+      owned_by: 'ai-worker-proxy',
+      permission: [],
+    }));
+  }
+
+  /**
    * Get provider configurations for a given model name
    */
   getProvidersForModel(model: string): ProviderConfig[] {

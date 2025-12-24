@@ -38,7 +38,7 @@ export default {
       }
 
       // Models list endpoint
-      if (path === '/models' && request.method === 'GET') {
+      if ((path === '/models' || path === '/v1/models') && request.method === 'GET') {
         const router = new Router(env);
         const models = router.getAvailableModels();
 

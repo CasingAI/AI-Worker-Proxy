@@ -56,11 +56,19 @@ export class CloudflareAIProvider extends BaseProvider {
 
     const openAIResponse = createProxyResponse(content, this.model);
 
-    // Handle tool calls if present
+    // Handle tool calls if present (Responses-style output item)
     if (response.tool_calls && response.tool_calls.length > 0) {
-      openAIResponse.choices[0].message.tool_calls = this.convertToolCalls(response.tool_calls);
-      openAIResponse.choices[0].message.content = null; // No content when there are tool calls
-      openAIResponse.choices[0].finish_reason = 'tool_calls';
+      const toolCalls = this.convertToolCalls(response.tool_calls);
+      for (const toolCall of toolCalls) {
+        openAIResponse.output.push({
+          id: openAIResponse.id,
+          type: 'function_call',
+          callId: toolCall.id,
+          name: toolCall.function.name,
+          arguments: toolCall.function.arguments,
+          status: 'completed',
+        });
+      }
     }
 
     return {
@@ -80,7 +88,7 @@ export class CloudflareAIProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
-        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
  
         let fullText = '';
         // Cloudflare AI returns a ReadableStream

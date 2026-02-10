@@ -77,7 +77,7 @@ export class AnthropicProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
-        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
  
         let fullText = '';
         let toolCallBuffer: any = null;

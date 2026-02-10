@@ -1,5 +1,4 @@
 // OpenAI-style message helpers kept for provider adapters
-import type { ResponseObject } from './types/AgentSDK/AgentSDK';
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant' | 'tool' | 'function' | 'developer';
   content: string | null;
@@ -28,7 +27,7 @@ export interface Tool {
 
 export interface ProxyInputItem {
   type?: 'message';
-  role: 'system' | 'user' | 'assistant' | 'developer';
+  role: 'system' | 'user' | 'assistant' | 'developer' | 'tool' | 'function';
   content: string;
 }
 
@@ -50,7 +49,54 @@ export interface OpenAIChatRequest {
   store?: boolean;
 }
 
-export type ProxyResponse = ResponseObject;
+export interface ProxyResponseContentPart {
+  type: 'output_text' | 'refusal' | string;
+  text?: string;
+  refusal?: string;
+  annotations?: unknown[];
+}
+
+export interface ProxyResponseOutputItem {
+  id?: string;
+  type: 'message' | 'function_call' | 'reasoning' | string;
+  status?: 'completed' | 'in_progress' | 'incomplete' | 'failed' | string;
+  role?: 'assistant' | 'user' | 'system';
+  content?: ProxyResponseContentPart[];
+  callId?: string;
+  name?: string;
+  arguments?: string;
+}
+
+export interface ProxyResponseUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  input_tokens_details?: unknown;
+  output_tokens_details?: unknown;
+}
+
+export interface ProxyResponse {
+  id: string;
+  object?: 'response' | string;
+  created_at?: number;
+  completed_at?: number;
+  status?: 'completed' | 'in_progress' | 'incomplete' | 'failed' | string;
+  model?: string;
+  output: ProxyResponseOutputItem[];
+  usage?: ProxyResponseUsage;
+  metadata?: Record<string, unknown> | null;
+  instructions?: string | null;
+  previous_response_id?: string | null;
+  parallel_tool_calls?: boolean;
+  temperature?: number | null;
+  top_p?: number | null;
+  tool_choice?: unknown;
+  tools?: unknown[];
+  truncation?: string | null;
+  text?: unknown;
+  store?: boolean;
+  service_tier?: string | null;
+}
 
 // Provider configuration
 export interface ProviderConfig {

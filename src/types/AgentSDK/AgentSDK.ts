@@ -1,94 +1,7 @@
 /**
- * https://github.com/openai/agents-core/blob/main/src/types/protocol.ts
- * https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/src/types/protocol.ts
- * 统一 SDK 中 RunStreamEvent/ResponseStreamEvent 的 TypeScript 描述，方便代理解析 SSE payload。
+ * 服务器侧 Responses API（标准接口）事件定义。
+ * 注意：这是服务端原始 SSE 事件，不是 SDK 内部转换后的事件名。
  */
-
-export type ProviderData = Record<string, unknown>;
-
-export interface ResponseStreamEventBase {
-  providerData?: ProviderData;
-}
-
-export interface ResponseStartedEvent extends ResponseStreamEventBase {
-  type: 'response_started';
-}
-
-export interface OutputTextDeltaEvent extends ResponseStreamEventBase {
-  type: 'output_text_delta';
-  delta: string;
-  itemId?: string;
-  outputIndex?: number;
-  contentIndex?: number;
-}
-
-export interface ResponseDoneEvent extends ResponseStreamEventBase {
-  type: 'response_done';
-  response: ResponseObject;
-}
-
-export interface RawModelEvent extends ResponseStreamEventBase {
-  type: 'model';
-  event: ResponseStreamEvent;
-}
-
-export type ResponseStreamEvent =
-  | ResponseStartedEvent
-  | OutputTextDeltaEvent
-  | ResponseDoneEvent
-  | RawModelEvent;
-
-export interface ResponseObject {
-  id: string;
-  object?: string;
-  status?: 'completed' | 'in_progress' | 'failed' | 'incomplete';
-  model?: string;
-  created_at?: number;
-  completed_at?: number;
-  instructions?: string | null;
-  previous_response_id?: string | null;
-  output?: ResponseOutputItem[];
-  usage?: ResponseUsage;
-  metadata?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-export interface ResponseOutputItem {
-  id: string;
-  type: 'message' | 'tool' | 'reasoning' | string;
-  role: 'assistant' | string;
-  status?: 'completed' | 'in_progress' | 'incomplete';
-  content?: ResponseContentBlock[];
-  [key: string]: unknown;
-}
-
-export type ResponseContentBlock =
-  | OutputTextBlock
-  | ReasoningTextBlock
-  | RefusalBlock
-  | ToolCallBlock
-  | { type: string; [key: string]: unknown };
-
-export interface OutputTextBlock {
-  type: 'output_text';
-  text: string;
-  annotations?: unknown[];
-}
-
-export interface ReasoningTextBlock {
-  type: 'reasoning_text';
-  text: string;
-}
-
-export interface RefusalBlock {
-  type: 'refusal';
-  refusal: string;
-}
-
-export interface ToolCallBlock {
-  type: 'input_text' | 'input_image' | 'file' | 'image';
-  [key: string]: unknown;
-}
 
 export interface ResponseUsage {
   input_tokens: number;
@@ -98,37 +11,87 @@ export interface ResponseUsage {
   output_tokens_details?: Record<string, number>;
 }
 
-export class RunRawModelStreamEvent {
-  readonly type = 'raw_model_stream_event';
-  constructor(public readonly data: ResponseStreamEvent) {}
-}
-
-export type RunItemStreamEventName =
-  | 'message_output_created'
-  | 'handoff_requested'
-  | 'handoff_occurred'
-  | 'tool_called'
-  | 'tool_output'
-  | 'reasoning_item_created'
-  | 'tool_approval_requested';
-
-export interface AgentRunItem {
-  id: string;
-  type: string;
+export interface ResponseContentPart {
+  type: 'output_text' | 'refusal' | string;
+  text?: string;
+  refusal?: string;
+  annotations?: unknown[];
   [key: string]: unknown;
 }
 
-export class RunItemStreamEvent {
-  readonly type = 'run_item_stream_event';
-  constructor(public readonly name: RunItemStreamEventName, public readonly item: AgentRunItem) {}
+export interface ResponseOutputItem {
+  id: string;
+  type: 'message' | 'function_call' | 'reasoning' | string;
+  role?: 'assistant' | 'user' | 'system';
+  status?: 'in_progress' | 'completed' | 'incomplete' | 'failed';
+  content?: ResponseContentPart[];
+  [key: string]: unknown;
 }
 
-export class RunAgentUpdatedStreamEvent {
-  readonly type = 'agent_updated_stream_event';
-  constructor(public readonly agent: Record<string, unknown>) {}
+export interface ResponseObject {
+  id: string;
+  object: 'response';
+  created_at: number;
+  completed_at?: number;
+  status: 'in_progress' | 'completed' | 'incomplete' | 'failed';
+  model: string;
+  output: ResponseOutputItem[];
+  usage?: ResponseUsage;
+  metadata?: Record<string, unknown> | null;
+  instructions?: string | null;
+  previous_response_id?: string | null;
+  [key: string]: unknown;
 }
 
-export type RunStreamEvent =
-  | RunRawModelStreamEvent
-  | RunItemStreamEvent
-  | RunAgentUpdatedStreamEvent;
+export interface ResponseCreatedEvent {
+  type: 'response.created';
+  response: ResponseObject;
+}
+
+export interface ResponseOutputItemAddedEvent {
+  type: 'response.output_item.added';
+  output_index: number;
+  item: ResponseOutputItem;
+}
+
+export interface ResponseOutputTextDeltaEvent {
+  type: 'response.output_text.delta';
+  item_id: string;
+  output_index: number;
+  content_index: number;
+  delta: string;
+}
+
+export interface ResponseOutputTextDoneEvent {
+  type: 'response.output_text.done';
+  item_id: string;
+  output_index: number;
+  content_index: number;
+  text: string;
+}
+
+export interface ResponseOutputItemDoneEvent {
+  type: 'response.output_item.done';
+  output_index: number;
+  item: ResponseOutputItem;
+}
+
+export interface ResponseCompletedEvent {
+  type: 'response.completed';
+  response: ResponseObject;
+}
+
+export interface ResponseFailedEvent {
+  type: 'response.failed';
+  response: ResponseObject;
+}
+
+export type ResponseStreamEvent =
+  | ResponseCreatedEvent
+  | ResponseOutputItemAddedEvent
+  | ResponseOutputTextDeltaEvent
+  | ResponseOutputTextDoneEvent
+  | ResponseOutputItemDoneEvent
+  | ResponseCompletedEvent
+  | ResponseFailedEvent
+  | { type: string; [key: string]: unknown };

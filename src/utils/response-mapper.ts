@@ -1,13 +1,4 @@
-import type {
-  ResponseContentBlock,
-  ResponseDoneEvent,
-  ResponseObject,
-  ResponseOutputItem,
-  ResponseStartedEvent,
-  OutputTextDeltaEvent,
-  ProviderData,
-  ResponseUsage,
-} from '../types/AgentSDK/AgentSDK';
+import type { ProxyResponse, ProxyResponseOutputItem, ProxyResponseUsage } from '../types';
 
 export function createProxyResponse(
   content: string,
@@ -15,31 +6,31 @@ export function createProxyResponse(
   options?: {
     responseId?: string;
     itemId?: string;
-    status?: 'completed' | 'in_progress' | 'failed';
+    status?: 'completed' | 'in_progress' | 'failed' | 'incomplete';
     createdAt?: number;
   }
-): ResponseObject {
+): ProxyResponse {
   const responseId = options?.responseId ?? `resp-${generateId()}`;
   const itemId = options?.itemId ?? `item-${generateId()}`;
   const now = options?.createdAt ?? Math.floor(Date.now() / 1000);
-  const usage: ResponseUsage = {
+  const usage: ProxyResponseUsage = {
     input_tokens: 0,
     output_tokens: Math.max(content.length, 0),
     total_tokens: Math.max(content.length, 0),
   };
 
-  const contentBlock: ResponseContentBlock = {
-    type: 'output_text',
-    text: content,
-    annotations: [],
-  };
-
-  const outputItem: ResponseOutputItem = {
+  const outputItem: ProxyResponseOutputItem = {
     id: itemId,
     type: 'message',
     role: 'assistant',
     status: options?.status ?? 'completed',
-    content: [contentBlock],
+    content: [
+      {
+        type: 'output_text',
+        text: content,
+        annotations: [],
+      },
+    ],
   };
 
   return {
@@ -53,7 +44,6 @@ export function createProxyResponse(
     previous_response_id: null,
     metadata: {},
     output: [outputItem],
-    output_text: content,
     usage,
     parallel_tool_calls: true,
     temperature: 1,
@@ -77,52 +67,84 @@ export function createProxyStreamChunk(
     outputText?: string;
   }
 ): string {
-  const providerData: ProviderData = {};
-  if (options?.responseId) {
-    providerData.responseId = options.responseId;
-  }
-  if (options?.itemId) {
-    providerData.itemId = options.itemId;
-  }
+  const itemId = options?.itemId ?? `item-${generateId()}`;
+  const outputText = options?.outputText ?? text;
 
   if (status === 'in_progress') {
-    const event: OutputTextDeltaEvent = {
-      type: 'output_text_delta',
+    const event = {
+      type: 'response.output_text.delta',
+      item_id: itemId,
+      output_index: 0,
+      content_index: 0,
       delta: text,
-      providerData,
-      itemId: options?.itemId,
-      outputIndex: 0,
-      contentIndex: 0,
     };
 
     return `data: ${JSON.stringify(event)}\n\n`;
   }
 
-  const response = createProxyResponse(options?.outputText ?? text, model, {
+  const response = createProxyResponse(outputText, model, {
     responseId: options?.responseId,
-    itemId: options?.itemId,
+    itemId,
     status: 'completed',
   });
 
-  const event: ResponseDoneEvent = {
-    type: 'response_done',
-    response,
-    providerData,
+  const outputTextDoneEvent = {
+    type: 'response.output_text.done',
+    item_id: itemId,
+    output_index: 0,
+    content_index: 0,
+    text: outputText,
   };
 
-  return `data: ${JSON.stringify(event)}\n\n`;
+  const outputItemDoneEvent = {
+    type: 'response.output_item.done',
+    output_index: 0,
+    item: response.output[0],
+  };
+
+  const completedEvent = {
+    type: 'response.completed',
+    response,
+  };
+
+  return (
+    `data: ${JSON.stringify(outputTextDoneEvent)}\n\n` +
+    `data: ${JSON.stringify(outputItemDoneEvent)}\n\n` +
+    `data: ${JSON.stringify(completedEvent)}\n\n`
+  );
 }
 
-export function createResponseStartedChunk(responseId: string, itemId?: string): string {
-  const event: ResponseStartedEvent = {
-    type: 'response_started',
-    providerData: {
-      responseId,
-      itemId,
+export function createResponseStartedChunk(responseId: string, itemId: string | undefined, model: string): string {
+  const response = createProxyResponse('', model, {
+    responseId,
+    itemId,
+    status: 'in_progress',
+  });
+  response.output = [];
+  delete response.usage;
+  delete response.completed_at;
+
+  const createdEvent = {
+    type: 'response.created',
+    response,
+  };
+
+  const outputItemAddedEvent = {
+    type: 'response.output_item.added',
+    output_index: 0,
+    item: {
+      id: itemId ?? `item-${generateId()}`,
+      type: 'message',
+      role: 'assistant',
+      status: 'in_progress',
+      content: [],
     },
   };
 
-  return `data: ${JSON.stringify(event)}\n\n`;
+  return (
+    `data: ${JSON.stringify(createdEvent)}\n\n` +
+    `data: ${JSON.stringify(outputItemAddedEvent)}\n\n`
+  );
 }
 
 export function createStreamIds(): { responseId: string; itemId: string } {

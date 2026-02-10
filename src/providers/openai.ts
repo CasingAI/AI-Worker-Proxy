@@ -11,18 +11,16 @@ export class OpenAIProvider extends BaseProvider {
         baseURL: this.baseUrl,
       });
 
-      const baseParams: OpenAI.Responses.ResponseCreateParamsBase = {
+      const baseParams: Omit<OpenAI.Responses.ResponseCreateParams, 'stream'> = {
         model: this.model,
-        input: request.input ?? buildResponseInput(request),
+        input: ((request.input ?? buildResponseInput(request)) as any) ?? '',
         instructions: extractInstructions(request),
         temperature: request.temperature,
         top_p: request.top_p,
-        stop: request.stop,
         max_output_tokens: request.max_output_tokens ?? request.max_tokens,
         tools: mapToolsToResponses(request.tools),
         tool_choice: request.tool_choice as any,
         previous_response_id: request.previous_response_id,
-        max_tool_calls: request.max_tool_calls,
         store: request.store,
       };
 

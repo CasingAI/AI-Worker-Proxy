@@ -77,7 +77,7 @@ export class ZhipuProvider extends BaseProvider {
 
     (async () => {
       try {
-        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
  
         let fullText = '';
         for await (const chunk of stream) {

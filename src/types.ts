@@ -1,4 +1,5 @@
 // OpenAI-style message helpers kept for provider adapters
+import type { ResponseObject } from './types/AgentSDK/AgentSDK';
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant' | 'tool' | 'function' | 'developer';
   content: string | null;
@@ -49,37 +50,7 @@ export interface OpenAIChatRequest {
   store?: boolean;
 }
 
-export interface ProxyResponseContentPart {
-  type: 'output_text';
-  text: string;
-  annotations?: unknown[];
-}
-
-export interface ProxyResponseOutputItem {
-  id: string;
-  type: 'message';
-  status: 'completed' | 'in_progress' | 'failed';
-  role: 'assistant' | 'user' | 'system';
-  content: ProxyResponseContentPart[];
-}
-
-export interface ProxyResponseUsage {
-  input_tokens?: number;
-  output_tokens?: number;
-  total_tokens?: number;
-}
-
-export interface ProxyResponse {
-  id: string;
-  object: 'response';
-  created_at: number;
-  model: string;
-  output: ProxyResponseOutputItem[];
-  output_text: string;
-  status: 'completed' | 'in_progress' | 'failed';
-  usage?: ProxyResponseUsage;
-  metadata?: Record<string, unknown> | null;
-}
+export type ProxyResponse = ResponseObject;
 
 // Provider configuration
 export interface ProviderConfig {

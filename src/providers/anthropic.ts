@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, ToolCall } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class AnthropicProvider extends BaseProvider {
@@ -77,6 +77,8 @@ export class AnthropicProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+ 
         let fullText = '';
         let toolCallBuffer: any = null;
 

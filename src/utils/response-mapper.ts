@@ -1,74 +1,128 @@
-import { ProxyResponse, ProxyResponseOutputItem, ProxyResponseContentPart } from '../types';
+import type {
+  ResponseContentBlock,
+  ResponseDoneEvent,
+  ResponseObject,
+  ResponseOutputItem,
+  ResponseStartedEvent,
+  OutputTextDeltaEvent,
+  ProviderData,
+  ResponseUsage,
+} from '../types/AgentSDK/AgentSDK';
 
 export function createProxyResponse(
   content: string,
-  model: string
-): ProxyResponse {
-  const id = `resp-${generateId()}`;
-  const item: ProxyResponseOutputItem = {
-    id: `item-${generateId()}`,
+  model: string,
+  options?: {
+    responseId?: string;
+    itemId?: string;
+    status?: 'completed' | 'in_progress' | 'failed';
+    createdAt?: number;
+  }
+): ResponseObject {
+  const responseId = options?.responseId ?? `resp-${generateId()}`;
+  const itemId = options?.itemId ?? `item-${generateId()}`;
+  const now = options?.createdAt ?? Math.floor(Date.now() / 1000);
+  const usage: ResponseUsage = {
+    input_tokens: 0,
+    output_tokens: Math.max(content.length, 0),
+    total_tokens: Math.max(content.length, 0),
+  };
+
+  const contentBlock: ResponseContentBlock = {
+    type: 'output_text',
+    text: content,
+    annotations: [],
+  };
+
+  const outputItem: ResponseOutputItem = {
+    id: itemId,
     type: 'message',
-    status: 'completed',
     role: 'assistant',
-    content: [
-      {
-        type: 'output_text',
-        text: content,
-        annotations: [],
-      },
-    ],
+    status: options?.status ?? 'completed',
+    content: [contentBlock],
   };
 
   return {
-    id,
+    id: responseId,
     object: 'response',
-    created_at: Math.floor(Date.now() / 1000),
+    created_at: now,
+    completed_at: options?.status === 'completed' ? now : undefined,
+    status: options?.status ?? 'completed',
     model,
-    output: [item],
+    instructions: null,
+    previous_response_id: null,
+    metadata: {},
+    output: [outputItem],
     output_text: content,
-    status: 'completed',
-    metadata: null,
+    usage,
+    parallel_tool_calls: true,
+    temperature: 1,
+    top_p: 1,
+    tool_choice: 'auto',
+    tools: [],
+    truncation: 'disabled',
+    text: { format: { type: 'text' } },
+    store: true,
+    service_tier: 'auto',
   };
 }
 
-export function createProxyStreamChunk(
+export function createResponseStreamChunk(
   text: string,
   model: string,
-  status: 'in_progress' | 'completed' | 'failed' = 'in_progress',
+  status: 'in_progress' | 'completed',
   options?: {
     responseId?: string;
     itemId?: string;
     outputText?: string;
   }
 ): string {
-  const finalText = status === 'completed' ? (options?.outputText ?? text) : text;
-  const chunk: ProxyResponse = {
-    id: options?.responseId ?? `resp-${generateId()}`,
-    object: 'response',
-    created_at: Math.floor(Date.now() / 1000),
-    model,
-    output_text: status === 'completed' ? finalText : '',
-    status,
-    usage: undefined,
-    metadata: null,
-    output: [
-      {
-        id: options?.itemId ?? `item-${generateId()}`,
-        type: 'message',
-        status,
-        role: 'assistant',
-        content: [
-          {
-            type: 'output_text',
-            text: finalText,
-            annotations: [],
-          },
-        ],
-      },
-    ],
+  const providerData: ProviderData = {};
+  if (options?.responseId) {
+    providerData.responseId = options.responseId;
+  }
+  if (options?.itemId) {
+    providerData.itemId = options.itemId;
+  }
+
+  if (status === 'in_progress') {
+    const event: OutputTextDeltaEvent = {
+      type: 'output_text_delta',
+      delta: text,
+      providerData,
+      itemId: options?.itemId,
+      outputIndex: 0,
+      contentIndex: 0,
+    };
+
+    return `data: ${JSON.stringify(event)}\n\n`;
+  }
+
+  const response = createProxyResponse(options?.outputText ?? text, model, {
+    responseId: options?.responseId,
+    itemId: options?.itemId,
+    status: 'completed',
+  });
+
+  const event: ResponseDoneEvent = {
+    type: 'response_done',
+    response,
+    providerData,
   };
 
-  return `data: ${JSON.stringify(chunk)}\n\n`;
+  return `data: ${JSON.stringify(event)}\n\n`;
+}
+
+export function createResponseStartedChunk(responseId: string, itemId?: string): string {
+  const event: ResponseStartedEvent = {
+    type: 'response_started',
+    providerData: {
+      responseId,
+      itemId,
+    },
+  };
+
+  return `data: ${JSON.stringify(event)}\n\n`;
 }
 
 export function createStreamIds(): { responseId: string; itemId: string } {

@@ -50,6 +50,7 @@ ROUTES_CONFIG = '''
   ]
 }
 '''
+PROXY_AUTH_TOKEN=testGiuyghi
 
 # Secrets to set in Cloudflare Dashboard:
 # - PROXY_AUTH_TOKEN

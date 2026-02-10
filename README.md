@@ -1,89 +1,66 @@
-# 🚀 AI Worker Proxy: All AI Models in One API (Free & 100% Uptime)
+# 🚀 AI Worker Proxy：一套兼容所有 AI 模型的统一入口（永久免费 + 100% 稳定）
 
-[![Deploy to Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange?logo=cloudflare)](https://workers.cloudflare.com/)
-[![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-green)](https://openai.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![部署到 Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange?logo=cloudflare)](https://workers.cloudflare.com/)
+[![兼容 OpenAI](https://img.shields.io/badge/OpenAI-Compatible-green)](https://openai.com/)
+[![MIT 许可](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Tired of your AI API keys running out of credits or getting rate-limited? Want to use Claude or Gemini but your app only supports OpenAI?
-
-This is a **Free AI Gateway** that runs on Cloudflare Workers. It acts as a middleman: you send it an OpenAI-style request, and it routes it to **ChatGPT, Claude, Gemini, or even free local models**, rotating your API keys automatically so you never hit limits.
-
-- **💰 Cost:** $0 (Runs on Cloudflare's free tier - 100k requests/day).
-- **⚡ Setup time:** 5 minutes. No coding required.
+**还在用 OpenAI 接口发请求，却想接入 Claude、Gemini 等更多模型？**  
+这个项目提供一个部署在 Cloudflare Workers 上的免费 AI 网关：你只需把标准的 OpenAI 请求送过来，网关会按配置把流量路由到 ChatGPT、Claude、Gemini，甚至免费的本地模型，并自动轮换 API Key，保持服务不断线。
 
 ---
 
-## 🔥 Why You Need This
+## 🔥 这套代理有什么好处
 
-*   **100% Uptime (Failover):** If OpenAI goes down, it instantly switches to Claude or Gemini. Your app never stops working.
-*   **Key Rotation:** Put in 5 different API keys. It will use them one by one. Bye-bye rate limits.
-*   **One API to Rule Them All:** Talk to Anthropic Claude 3.5, Google Gemini 2.0, and GPT-4o using the exact same code.
-*   **Stealth Configuration:** Change your routing logic via GitHub Variables without touching a single line of code.
-
----
-
-## 🎮 How to Install (Easy Guide)
-
-You don't need to know how to code. Just follow these 4 steps to get your own private AI proxy.
-
-### Step 1: Fork this Repository
-Scroll to the top right of this GitHub page and click the **"Fork"** button. This creates your own copy of the project.
-
-### Step 2: Add Cloudflare Secrets to GitHub
-Your GitHub needs permission to push the code to your Cloudflare account.
-
-1. Go to your new forked repository.
-2. Click **Settings** (top tab) -> **Secrets and variables** (left sidebar) -> **Actions**.
-3. Click the green **"New repository secret"** button.
-
-You need to add two secrets here:
-
-*   **Secret 1 Name:** `CLOUDFLARE_ACCOUNT_ID`
-    *   *Where to get it:* Log into [Cloudflare Dashboard](https://dash.cloudflare.com). Look at the URL bar. It's the long string of numbers/letters after `dash.cloudflare.com/`. Copy that.
-*   **Secret 2 Name:** `CLOUDFLARE_API_TOKEN`
-    *   *Where to get it:* Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens). Click **"Create Token"**. Select **"Edit Cloudflare Workers"** template. Click Continue -> Create Token. Copy the secret generated.
-
-### Step 3: Launch the Action (Deploy)
-1. Go to the **"Actions"** tab at the top of your GitHub repo.
-2. Click "I understand my workflows, go ahead and enable them" (if asked).
-3. On the left, click **"Deploy to Cloudflare"**.
-4. Click **"Run workflow"** -> **"Run workflow"**.
-
-Wait 1-2 minutes. When it turns green, your proxy is live! The URL will look like: `https://ai-proxy.YOUR-USERNAME.workers.dev`
-
-### Step 4: Add Your AI Keys in Cloudflare
-Now you just need to feed it your API keys (OpenAI, Claude, etc).
-
-1. Go to your [Cloudflare Dashboard](https://dash.cloudflare.com).
-2. Click **"Workers & Pages"** on the left sidebar.
-3. Click on your new worker (it should be named `ai-worker-proxy`).
-4. Go to the **"Settings"** tab -> **"Variables and Secrets"** (on the left).
-5. Under **Environment Variables**, click **"Add"**. Add these:
-
-| Variable Name | Value (Example) | What is it? |
-|--------------|-----------------|-------------|
-| `PROXY_AUTH_TOKEN` | `my-secret-password-123` | Make up a password. You will use this to connect to your proxy. |
-| `ANTHROPIC_KEY_1` | `sk-ant-xxx...` | Your Claude API Key |
-| `GOOGLE_KEY_1` | `AIza...` | Your Google Gemini API Key |
-| `OPENAI_KEY_1` | `sk-proj-...` | Your OpenAI API Key |
-
-Click **Save and Deploy**. You're done! 🎉
+- **多模型自动切换**：OpenAI 出问题时自动切到其它厂商，保持服务可用。  
+- **多 Key 轮换策略**：配置几组 API Key，接口逐个尝试，消除单点限流。  
+- **统一 API 体验**：同一套代码即可访问 Anthropic、Google、OpenAI 等平台。  
+- **通过 GitHub Variables 静默更新路由**：无需改源码，随时动态调整路由策略。
 
 ---
 
-## 🤫 Secret Routing Config (No Code Edits!)
+## 🎮 四步部署指南
 
-You don't need to edit `wrangler.toml` or commit any code to change how your models behave. You can do it stealthily using **GitHub Variables**.
+### 第一步：Fork 仓库
+点击页面右上角的 **“Fork”**，复制一份仓库到你的 GitHub 账号。
 
-This allows you to update your model lists or failover logic without anyone seeing it in your file history.
+### 第二步：配置 Cloudflare Secrets
+1. 进入你 Fork 后的仓库，打开 `Settings` → `Secrets and variables` → `Actions`。  
+2. 点击 `New repository secret`。  
+3. 添加以下两个 secret：
 
-1. Go to your GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions**.
-2. Click the **Variables** tab (next to Secrets).
-3. Click **New repository variable**.
-4. Name: `ROUTES_CONFIG`
-5. Value: Paste your JSON configuration here.
+- `CLOUDFLARE_ACCOUNT_ID`：可在 Cloudflare 控制台地址栏 `dash.cloudflare.com/...` 中复制账号 ID。  
+- `CLOUDFLARE_API_TOKEN`：访问 [API Tokens](https://dash.cloudflare.com/profile/api-tokens)，选择 “Edit Cloudflare Workers” 模板生成 Token。
 
-**Example `ROUTES_CONFIG` JSON:**
+### 第三步：触发部署
+1. 进入仓库的 `Actions` 选项卡，启用 workflow（如果提示）。  
+2. 选择 `Deploy to Cloudflare`，点击 `Run workflow`。  
+部署大约 1~2 分钟，成功后地址类似 `https://ai-proxy.YOUR-USERNAME.workers.dev`。
+
+### 第四步：在 Cloudflare 填入 AI Key
+1. 登录 [Cloudflare 控制台](https://dash.cloudflare.com)。  
+2. 左侧点击 “Workers & Pages”，选择 `ai-worker-proxy`。  
+3. 前往 `Settings` → `Variables and Secrets`，在 Environment Variables 中点击 `Add`，新增：
+
+| 变量名 | 示例值 | 说明 |
+|--------|--------|------|
+| `PROXY_AUTH_TOKEN` | `my-secret-password-123` | 访问密码，作为代理的 API Key |
+| `ANTHROPIC_KEY_1` | `sk-ant-xxx...` | Claude API Key |
+| `GOOGLE_KEY_1` | `AIza...` | Google Gemini API Key |
+| `OPENAI_KEY_1` | `sk-proj-...` | OpenAI API Key |
+
+保存后点击 “Save and Deploy” 即可完成部署。
+
+---
+
+## 🤫 通过 GitHub Variables 静默调整路由
+
+无需改源码或 `wrangler.toml`，通过 GitHub 变量控制路由策略：  
+1. 打开仓库 → `Settings` → `Secrets and variables` → `Actions`。  
+2. 切换到 `Variables` 标签页。  
+3. 新建变量 `ROUTES_CONFIG`，内容填入 JSON 配置。
+
+示例配置：
+
 ```json
 {
   "super-brain": [
@@ -108,54 +85,48 @@ This allows you to update your model lists or failover logic without anyone seei
 }
 ```
 
-**How to apply changes:**
-After saving the variable, just go to the **Actions** tab and run the **"Deploy to Cloudflare"** workflow again. It will inject your new config automatically.
+变量保存后再次运行 `Deploy to Cloudflare`，新配置会自动生效。
 
 ---
 
-## 🚀 How to Use It
+## 🚀 如何调用代理
 
-Now you can use your proxy URL anywhere you normally use OpenAI.
+只需把原来访问 OpenAI 的 base_url 指向你的 Worker，API Key 用 `PROXY_AUTH_TOKEN`。
 
-### In Python:
+### Python 示例
 ```python
 from openai import OpenAI
 
 client = OpenAI(
-    # 1. Put your Cloudflare Worker URL here + /v1
     base_url="https://ai-proxy.YOUR-USERNAME.workers.dev/v1",
-    # 2. Put the PROXY_AUTH_TOKEN you created in Step 4 here
-    api_key="my-secret-password-123" 
+    api_key="my-secret-password-123"
 )
 
-# Use the custom name you defined in ROUTES_CONFIG (e.g., "super-brain")
-# Or use standard names like "gpt-4o"
-response = client.chat.completions.create(
-    model="super-brain", 
-    messages=[{"role": "user", "content": "Hello!"}]
+response = client.responses.create(
+    model="super-brain",
+    instructions="你是一个乐于助人的助手。",
+    input="请介绍一下 GPT-4o。"
 )
-print(response.choices[0].message.content)
+print(response.output_text)
 ```
 
-### In any App (like Chatbox, NextChat, typingmind):
-*   **API URL / Base URL:** `https://ai-proxy.YOUR-USERNAME.workers.dev/v1`
-*   **API Key:** `my-secret-password-123` (Your `PROXY_AUTH_TOKEN`)
+### 其它客户端（如 Chatbox、NextChat、typingmind）
+- **Base URL：** `https://ai-proxy.YOUR-USERNAME.workers.dev/v1`  
+- **API Key：** 你在 Cloudflare 配置的 `PROXY_AUTH_TOKEN`
 
 ---
 
-## 🔒 Security Warning
+## 🔒 安全建议
 
-**NEVER put your real API keys in the GitHub code.** Always put them in the Cloudflare Dashboard (Step 4). If you put them in the code, people will steal your keys.
-
----
-
-## 💬 Support
-
-Found a bug? Need help?
-Open an issue in the [GitHub Issues](https://github.com/zxcloli666/AI-Worker-Proxy/issues) tab.
-
-### ⭐ If this saved you money or time, please drop a Star on the repo! It helps a lot!
+**请不要把真正的 API Key 写进源码！** 所有敏感信息都应存在 Cloudflare Secrets 中，以防被泄露。
 
 ---
 
-*Tags for search algorithms:* `openai proxy`, `ai gateway`, `api proxy`, `cloudflare workers ai`, `anthropic proxy`, `claude proxy`, `gemini proxy`, `multi provider ai`, `ai load balancer`, `openai compatible api`, `ai failover`, `free ai proxy`, `ai token rotation`, `gpt-4 proxy free`, `smm ai tools`, `bypass ai rate limit`
+## 💬 支持与反馈
+
+发现问题或想提建议？欢迎在 [GitHub Issues](https://github.com/zxcloli666/AI-Worker-Proxy/issues) 提交。  
+如果这个项目帮你省钱/省力，别忘了点个 Star 支持一下！
+
+---
+
+*标签提示：`openai proxy`、`ai gateway`、`api proxy`、`cloudflare workers ai`、`anthropic proxy`、`claude proxy`、`multi provider ai`、`ai load balancer`、`openai compatible api`、`ai failover`、`free ai proxy`、`ai token rotation`、`gpt-4 proxy free`、`smm ai tools`、`bypass ai rate limit`*

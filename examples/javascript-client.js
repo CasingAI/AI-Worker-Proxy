@@ -2,7 +2,7 @@
  * Example JavaScript/Node.js client using AI Worker Proxy
  */
 
-const BASE_URL = 'https://your-worker.workers.dev/v1/chat/completions';
+const BASE_URL = 'https://your-worker.workers.dev/v1/responses';
 const API_KEY = 'your-secret-proxy-token-here';
 
 // Example 1: Simple fetch with streaming
@@ -16,11 +16,10 @@ async function streamingExample() {
       'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'deep-think',  // Model name determines routing
-      messages: [
-        { role: 'user', content: 'Tell me a short story about a robot.' }
-      ],
-      stream: true
+      model: 'deep-think', // Model name determines routing
+      instructions: 'You are a helpful storyteller.',
+      input: 'Tell me a short story about a robot.',
+      stream: true,
     })
   });
 
@@ -41,10 +40,13 @@ async function streamingExample() {
 
         try {
           const parsed = JSON.parse(data);
-          const content = parsed.choices[0]?.delta?.content;
-          if (content) {
-            process.stdout.write(content);
-          }
+        const chunkContent =
+          parsed.output?.[0]?.content?.[0]?.text ||
+          parsed.output_text ||
+          '';
+        if (chunkContent) {
+          process.stdout.write(chunkContent);
+        }
         } catch (e) {
           // Skip invalid JSON
         }
@@ -65,16 +67,15 @@ async function nonStreamingExample() {
       'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'fast',  // Different model = different providers
-      messages: [
-        { role: 'user', content: 'What is 2+2?' }
-      ],
-      stream: false
+      model: 'fast', // Different model = different providers
+      instructions: 'You are a helpful math tutor.',
+      input: 'What is 2+2?',
+      stream: false,
     })
   });
 
   const data = await response.json();
-  console.log(data.choices[0].message.content);
+  console.log(data.output_text);
   console.log();
 }
 
@@ -89,16 +90,15 @@ async function openaiSdkExample() {
 
   console.log('Example 3: Using OpenAI SDK');
 
-  const stream = await client.chat.completions.create({
-    model: 'deep-think',  // Model name for routing
-    messages: [
-      { role: 'user', content: 'Count from 1 to 5.' }
-    ],
-    stream: true
+  const stream = await client.responses.create({
+    model: 'deep-think', // Model name for routing
+    instructions: 'You are a counting assistant.',
+    input: 'Count from 1 to 5.',
+    stream: true,
   });
 
   for await (const chunk of stream) {
-    const content = chunk.choices[0]?.delta?.content;
+    const content = chunk.output?.[0]?.content?.[0]?.text;
     if (content) {
       process.stdout.write(content);
     }
@@ -117,10 +117,9 @@ async function functionCallingExample() {
       'Authorization': `Bearer ${API_KEY}`
     },
     body: JSON.stringify({
-      model: 'deep-think',  // Function calling works with any model
-      messages: [
-        { role: 'user', content: "What's the weather in London?" }
-      ],
+      model: 'deep-think', // Function calling works with any model
+      instructions: 'You can call tools to get weather data.',
+      input: "What's the weather in London?",
       tools: [
         {
           type: 'function',
@@ -142,10 +141,8 @@ async function functionCallingExample() {
 
   const data = await response.json();
 
-  if (data.choices[0].message.tool_calls) {
-    const toolCall = data.choices[0].message.tool_calls[0];
-    console.log('Function called:', toolCall.function.name);
-    console.log('Arguments:', toolCall.function.arguments);
+  if (data.output_text) {
+    console.log('Assistant response:', data.output_text);
   }
   console.log();
 }

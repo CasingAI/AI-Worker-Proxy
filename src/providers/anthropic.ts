@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, ToolCall } from '../types';
-import { createOpenAIResponse, createStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { normalizeMessages } from '../utils/request';
 
 export class AnthropicProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -9,7 +10,8 @@ export class AnthropicProvider extends BaseProvider {
       const client = new Anthropic({ apiKey });
 
       // Convert OpenAI messages to Anthropic format
-      const { system, messages } = this.convertMessages(request.messages);
+      const messages = normalizeMessages(request);
+      const { system, messages: anthropicMessages } = this.convertMessages(messages);
 
       // Convert tools if present
       const tools = request.tools?.map((tool) => ({
@@ -20,7 +22,7 @@ export class AnthropicProvider extends BaseProvider {
 
       const params: any = {
         model: this.model,
-        messages,
+        messages: anthropicMessages,
         max_tokens: request.max_tokens || 4096,
         temperature: request.temperature,
         top_p: request.top_p,
@@ -49,26 +51,14 @@ export class AnthropicProvider extends BaseProvider {
     const response = await client.messages.create(params);
 
     let content = '';
-    let toolCalls: ToolCall[] | undefined;
 
     for (const block of response.content) {
       if (block.type === 'text') {
         content += block.text;
-      } else if (block.type === 'tool_use') {
-        if (!toolCalls) toolCalls = [];
-        toolCalls.push({
-          id: block.id,
-          type: 'function',
-          function: {
-            name: block.name,
-            arguments: JSON.stringify(block.input),
-          },
-        });
       }
     }
 
-    const finishReason = response.stop_reason === 'tool_use' ? 'tool_calls' : 'stop';
-    const openAIResponse = createOpenAIResponse(content, this.model, finishReason, toolCalls);
+    const openAIResponse = createProxyResponse(content, this.model);
 
     return {
       success: true,
@@ -100,7 +90,7 @@ export class AnthropicProvider extends BaseProvider {
           } else if (event.type === 'content_block_delta') {
             if (event.delta.type === 'text_delta') {
               const text = event.delta.text;
-              const chunk = createStreamChunk({ content: text, role: 'assistant' }, this.model);
+              const chunk = createProxyStreamChunk(text, this.model);
               await writer.write(encoder.encode(chunk));
             } else if (event.delta.type === 'input_json_delta' && toolCallBuffer) {
               toolCallBuffer.input += event.delta.partial_json;
@@ -116,16 +106,12 @@ export class AnthropicProvider extends BaseProvider {
                   arguments: toolCallBuffer.input,
                 },
               };
-              const chunk = createStreamChunk(
-                { tool_calls: [toolCall], role: 'assistant' },
-                this.model
-              );
+              const chunk = createProxyStreamChunk('', this.model);
               await writer.write(encoder.encode(chunk));
               toolCallBuffer = null;
             }
           } else if (event.type === 'message_stop') {
-            const finishReason = toolCallBuffer ? 'tool_calls' : 'stop';
-            const chunk = createStreamChunk({}, this.model, finishReason);
+            const chunk = createProxyStreamChunk('', this.model, 'completed');
             await writer.write(encoder.encode(chunk));
             await writer.write(encoder.encode('data: [DONE]\n\n'));
           }

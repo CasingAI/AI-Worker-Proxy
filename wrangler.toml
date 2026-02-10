@@ -40,10 +40,10 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
-  "zhipu-latest": [
+  "zhipu-flash-latest": [
     {
       "provider": "zhipu",
-      "model": "glm-4.7",
+      "model": "glm-4.7-flash",
       "apiKeys": ["ZHIPU_KEY_1"]
     }
   ],

@@ -1,5 +1,6 @@
 /**
  * https://github.com/openai/agents-core/blob/main/src/types/protocol.ts
+ * https://github.com/openai/openai-agents-js/blob/main/packages/agents-core/src/types/protocol.ts
  * 统一 SDK 中 RunStreamEvent/ResponseStreamEvent 的 TypeScript 描述，方便代理解析 SSE payload。
  */
 

@@ -67,7 +67,7 @@ export function createProxyResponse(
   };
 }
 
-export function createResponseStreamChunk(
+export function createProxyStreamChunk(
   text: string,
   model: string,
   status: 'in_progress' | 'completed',

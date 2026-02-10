@@ -7,7 +7,7 @@ export default {
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: getCORSHeaders(),
+        headers: getCORSHeaders(request),
       });
     }
 
@@ -31,7 +31,7 @@ export default {
           {
             headers: {
               'Content-Type': 'application/json',
-              ...getCORSHeaders(),
+              ...getCORSHeaders(request),
             },
           }
         );
@@ -50,7 +50,7 @@ export default {
           {
             headers: {
               'Content-Type': 'application/json',
-              ...getCORSHeaders(),
+              ...getCORSHeaders(request),
             },
           }
         );
@@ -92,7 +92,7 @@ export default {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             Connection: 'keep-alive',
-            ...getCORSHeaders(),
+            ...getCORSHeaders(request),
           },
         });
       }
@@ -101,7 +101,7 @@ export default {
       return new Response(JSON.stringify(response.response), {
         headers: {
           'Content-Type': 'application/json',
-          ...getCORSHeaders(),
+          ...getCORSHeaders(request),
         },
       });
     } catch (error) {
@@ -110,7 +110,7 @@ export default {
 
       // Add CORS headers to error response
       const headers = new Headers(errorResponse.headers);
-      Object.entries(getCORSHeaders()).forEach(([key, value]) => {
+      Object.entries(getCORSHeaders(request)).forEach(([key, value]) => {
         headers.set(key, value);
       });
 
@@ -122,11 +122,14 @@ export default {
   },
 };
 
-function getCORSHeaders(): Record<string, string> {
+function getCORSHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get('Origin');
+
   return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': '*',
+    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
 }

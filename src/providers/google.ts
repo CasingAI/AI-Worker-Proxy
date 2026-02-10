@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class GoogleProvider extends BaseProvider {
@@ -77,6 +77,8 @@ export class GoogleProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+ 
         let fullText = '';
         for await (const chunk of result.stream) {
           const chunkText = chunk.text();

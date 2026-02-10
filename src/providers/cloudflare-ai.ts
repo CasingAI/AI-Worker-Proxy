@@ -1,6 +1,6 @@
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, Tool, ToolCall } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createStreamIds, createResponseStartedChunk } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class CloudflareAIProvider extends BaseProvider {
@@ -80,6 +80,8 @@ export class CloudflareAIProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+ 
         let fullText = '';
         // Cloudflare AI returns a ReadableStream
         const reader = cfStream.getReader();

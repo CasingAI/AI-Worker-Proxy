@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
@@ -77,6 +77,8 @@ export class ZhipuProvider extends BaseProvider {
 
     (async () => {
       try {
+        await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId)));
+ 
         let fullText = '';
         for await (const chunk of stream) {
           const content = chunk.choices?.[0]?.delta?.content;

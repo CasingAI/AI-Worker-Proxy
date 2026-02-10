@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage } from '../types';
-import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class GoogleProvider extends BaseProvider {
@@ -68,6 +68,7 @@ export class GoogleProvider extends BaseProvider {
 
   private async handleStream(model: any, params: any): Promise<ProviderResponse> {
     const result = await model.generateContentStream(params);
+    const { responseId, itemId } = createStreamIds();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
@@ -76,17 +77,26 @@ export class GoogleProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        let fullText = '';
         for await (const chunk of result.stream) {
           const chunkText = chunk.text();
 
           if (chunkText) {
-            const streamChunk = createProxyStreamChunk(chunkText, this.model);
+            fullText += chunkText;
+            const streamChunk = createProxyStreamChunk(chunkText, this.model, 'in_progress', {
+              responseId,
+              itemId,
+            });
             await writer.write(encoder.encode(streamChunk));
           }
         }
 
         // Send final chunk
-        const finishChunk = createProxyStreamChunk('', this.model, 'completed');
+        const finishChunk = createProxyStreamChunk('', this.model, 'completed', {
+          responseId,
+          itemId,
+          outputText: fullText,
+        });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {

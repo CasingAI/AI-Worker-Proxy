@@ -1,6 +1,6 @@
-// OpenAI API types
+// OpenAI-style message helpers kept for provider adapters
 export interface OpenAIMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool' | 'function';
+  role: 'system' | 'user' | 'assistant' | 'tool' | 'function' | 'developer';
   content: string | null;
   name?: string;
   tool_calls?: ToolCall[];
@@ -25,48 +25,60 @@ export interface Tool {
   };
 }
 
+export interface ProxyInputItem {
+  type?: 'message';
+  role: 'system' | 'user' | 'assistant' | 'developer';
+  content: string;
+}
+
 export interface OpenAIChatRequest {
   model: string;
-  messages: OpenAIMessage[];
+  messages?: OpenAIMessage[];
+  input?: string | ProxyInputItem[];
+  instructions?: string;
   temperature?: number;
   max_tokens?: number;
+  max_output_tokens?: number;
+  top_p?: number;
+  stop?: string | string[];
   stream?: boolean;
   tools?: Tool[];
   tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
-  top_p?: number;
-  frequency_penalty?: number;
-  presence_penalty?: number;
-  stop?: string | string[];
-  n?: number;
+  previous_response_id?: string;
+  max_tool_calls?: number;
+  store?: boolean;
 }
 
-export interface OpenAIChatResponse {
-  id: string;
-  object: 'chat.completion';
-  created: number;
-  model: string;
-  choices: Array<{
-    index: number;
-    message: OpenAIMessage;
-    finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
-  }>;
-  usage?: {
-    prompt_tokens: number;
-    completion_tokens: number;
-    total_tokens: number;
-  };
+export interface ProxyResponseContentPart {
+  type: 'output_text';
+  text: string;
+  annotations?: unknown[];
 }
 
-export interface OpenAIStreamChunk {
+export interface ProxyResponseOutputItem {
   id: string;
-  object: 'chat.completion.chunk';
-  created: number;
+  type: 'message';
+  status: 'completed' | 'in_progress' | 'failed';
+  role: 'assistant' | 'user' | 'system';
+  content: ProxyResponseContentPart[];
+}
+
+export interface ProxyResponseUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+}
+
+export interface ProxyResponse {
+  id: string;
+  object: 'response';
+  created_at: number;
   model: string;
-  choices: Array<{
-    index: number;
-    delta: Partial<OpenAIMessage>;
-    finish_reason: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null;
-  }>;
+  output: ProxyResponseOutputItem[];
+  output_text: string;
+  status: 'completed' | 'in_progress' | 'failed';
+  usage?: ProxyResponseUsage;
+  metadata?: Record<string, unknown> | null;
 }
 
 // Provider configuration
@@ -92,7 +104,7 @@ export interface Env {
 // Provider response
 export interface ProviderResponse {
   success: boolean;
-  response?: OpenAIChatResponse;
+  response?: ProxyResponse;
   stream?: ReadableStream<Uint8Array>;
   error?: string;
   statusCode?: number;

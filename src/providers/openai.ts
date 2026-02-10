@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse } from '../types';
+import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
+import { buildResponseInput, extractInstructions } from '../utils/request';
 
 export class OpenAIProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -10,30 +11,34 @@ export class OpenAIProvider extends BaseProvider {
         baseURL: this.baseUrl,
       });
 
-      const params:
-        | OpenAI.Chat.ChatCompletionCreateParamsNonStreaming
-        | OpenAI.Chat.ChatCompletionCreateParamsStreaming = {
+      const baseParams: OpenAI.Responses.ResponseCreateParamsBase = {
         model: this.model,
-        messages: request.messages as any,
+        input: request.input ?? buildResponseInput(request),
+        instructions: extractInstructions(request),
         temperature: request.temperature,
-        max_tokens: request.max_tokens,
         top_p: request.top_p,
-        frequency_penalty: request.frequency_penalty,
-        presence_penalty: request.presence_penalty,
         stop: request.stop,
-        stream: request.stream || false,
-        tools: request.tools as any,
+        max_output_tokens: request.max_output_tokens ?? request.max_tokens,
+        tools: mapToolsToResponses(request.tools),
         tool_choice: request.tool_choice as any,
+        previous_response_id: request.previous_response_id,
+        max_tool_calls: request.max_tool_calls,
+        store: request.store,
       };
 
       if (request.stream) {
-        return this.handleStream(client, params as OpenAI.Chat.ChatCompletionCreateParamsStreaming);
-      } else {
-        return this.handleNonStream(
-          client,
-          params as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming
-        );
+        const streamParams: OpenAI.Responses.ResponseCreateParamsStreaming = {
+          ...baseParams,
+          stream: true,
+        };
+        return this.handleStream(client, streamParams);
       }
+
+      const nonStreamParams: OpenAI.Responses.ResponseCreateParamsNonStreaming = {
+        ...baseParams,
+        stream: false,
+      };
+      return this.handleNonStream(client, nonStreamParams);
     } catch (error) {
       return this.handleError(error, 'OpenAIProvider');
     }
@@ -41,27 +46,26 @@ export class OpenAIProvider extends BaseProvider {
 
   private async handleNonStream(
     client: OpenAI,
-    params: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming
+    params: OpenAI.Responses.ResponseCreateParamsNonStreaming
   ): Promise<ProviderResponse> {
-    const response = await client.chat.completions.create(params);
+    const response = await client.responses.create(params);
 
     return {
       success: true,
-      response: response as any,
+      response,
     };
   }
 
   private async handleStream(
     client: OpenAI,
-    params: OpenAI.Chat.ChatCompletionCreateParamsStreaming
+    params: OpenAI.Responses.ResponseCreateParamsStreaming
   ): Promise<ProviderResponse> {
-    const stream = await client.chat.completions.create(params);
+    const stream = await client.responses.create(params);
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
 
-    // Process stream in background
     (async () => {
       try {
         for await (const chunk of stream) {
@@ -82,4 +86,18 @@ export class OpenAIProvider extends BaseProvider {
       stream: readable,
     };
   }
+}
+
+function mapToolsToResponses(tools?: Tool[]): OpenAI.Responses.Tool[] | undefined {
+  if (!tools || tools.length === 0) {
+    return undefined;
+  }
+
+  return tools.map((tool) => ({
+    type: 'function',
+    name: tool.function.name,
+    description: tool.function.description || '',
+    parameters: tool.function.parameters || null,
+    strict: true,
+  }));
 }

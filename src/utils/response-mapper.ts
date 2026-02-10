@@ -1,50 +1,64 @@
-import { OpenAIChatResponse, OpenAIMessage } from '../types';
+import { ProxyResponse, ProxyResponseOutputItem, ProxyResponseContentPart } from '../types';
 
-export function createOpenAIResponse(
+export function createProxyResponse(
   content: string,
-  model: string,
-  finishReason: 'stop' | 'length' | 'tool_calls' = 'stop',
-  toolCalls?: any[]
-): OpenAIChatResponse {
-  const message: OpenAIMessage = {
+  model: string
+): ProxyResponse {
+  const id = `resp-${generateId()}`;
+  const item: ProxyResponseOutputItem = {
+    id: `item-${generateId()}`,
+    type: 'message',
+    status: 'completed',
     role: 'assistant',
-    content: toolCalls ? null : content,
-  };
-
-  if (toolCalls && toolCalls.length > 0) {
-    message.tool_calls = toolCalls;
-  }
-
-  return {
-    id: `chatcmpl-${generateId()}`,
-    object: 'chat.completion',
-    created: Math.floor(Date.now() / 1000),
-    model,
-    choices: [
+    content: [
       {
-        index: 0,
-        message,
-        finish_reason: finishReason,
+        type: 'output_text',
+        text: content,
+        annotations: [],
       },
     ],
   };
+
+  return {
+    id,
+    object: 'response',
+    created_at: Math.floor(Date.now() / 1000),
+    model,
+    output: [item],
+    output_text: content,
+    status: 'completed',
+    metadata: null,
+  };
 }
 
-export function createStreamChunk(
-  delta: Partial<OpenAIMessage>,
+export function createProxyStreamChunk(
+  text: string,
   model: string,
-  finishReason: 'stop' | 'length' | 'tool_calls' | null = null
+  status: 'in_progress' | 'completed' | 'failed' = 'in_progress',
+  responseId?: string
 ): string {
-  const chunk = {
-    id: `chatcmpl-${generateId()}`,
-    object: 'chat.completion.chunk',
-    created: Math.floor(Date.now() / 1000),
+  const chunk: ProxyResponse = {
+    id: responseId ?? `resp-${generateId()}`,
+    object: 'response',
+    created_at: Math.floor(Date.now() / 1000),
     model,
-    choices: [
+    output_text: status === 'completed' ? text : '',
+    status,
+    usage: undefined,
+    metadata: null,
+    output: [
       {
-        index: 0,
-        delta,
-        finish_reason: finishReason,
+        id: `item-${generateId()}`,
+        type: 'message',
+        status,
+        role: 'assistant',
+        content: [
+          {
+            type: 'output_text',
+            text,
+            annotations: [],
+          },
+        ],
       },
     ],
   };
@@ -52,7 +66,7 @@ export function createStreamChunk(
   return `data: ${JSON.stringify(chunk)}\n\n`;
 }
 
-export function generateId(length: number = 29): string {
+function generateId(length: number = 29): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {

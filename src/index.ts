@@ -66,8 +66,14 @@ export default {
       const chatRequest = body as OpenAIChatRequest;
 
       // Validate request
-      if (!chatRequest.messages || !Array.isArray(chatRequest.messages)) {
-        throw new ProxyError('Invalid request: messages array is required', 400);
+      const hasMessages =
+        chatRequest.messages && Array.isArray(chatRequest.messages) && chatRequest.messages.length > 0;
+      const hasInput =
+        typeof chatRequest.input === 'string' ||
+        (Array.isArray(chatRequest.input) && chatRequest.input.length > 0);
+
+      if (!hasMessages && !hasInput) {
+        throw new ProxyError('Invalid request: input or messages are required', 400);
       }
 
       if (!chatRequest.model) {

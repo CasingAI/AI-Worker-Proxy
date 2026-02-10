@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, ToolCall } from '../types';
-import { createOpenAIResponse, createStreamChunk } from '../utils/response-mapper';
+import { OpenAIChatRequest, ProviderResponse, OpenAIMessage } from '../types';
+import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { normalizeMessages } from '../utils/request';
 
 export class GoogleProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -10,7 +11,8 @@ export class GoogleProvider extends BaseProvider {
       const model = genAI.getGenerativeModel({ model: this.model });
 
       // Convert messages to Gemini format
-      const { systemInstruction, contents } = this.convertMessages(request.messages);
+      const messages = normalizeMessages(request);
+      const { systemInstruction, contents } = this.convertMessages(messages);
 
       // Convert tools if present
       const tools = request.tools
@@ -55,26 +57,8 @@ export class GoogleProvider extends BaseProvider {
     const result = await model.generateContent(params);
     const response = result.response;
 
-    let content = '';
-    let toolCalls: ToolCall[] | undefined;
-
-    // Check for function calls
-    const functionCalls = response.functionCalls();
-    if (functionCalls && functionCalls.length > 0) {
-      toolCalls = functionCalls.map((fc: any, index: number) => ({
-        id: `call_${Date.now()}_${index}`,
-        type: 'function',
-        function: {
-          name: fc.name,
-          arguments: JSON.stringify(fc.args),
-        },
-      }));
-    } else {
-      content = response.text();
-    }
-
-    const finishReason = toolCalls ? 'tool_calls' : 'stop';
-    const openAIResponse = createOpenAIResponse(content, this.model, finishReason, toolCalls);
+    const content = response.text();
+    const openAIResponse = createProxyResponse(content, this.model);
 
     return {
       success: true,
@@ -92,47 +76,17 @@ export class GoogleProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
-        let isFirst = true;
-
         for await (const chunk of result.stream) {
           const chunkText = chunk.text();
 
           if (chunkText) {
-            const delta = isFirst
-              ? { content: chunkText, role: 'assistant' as const }
-              : { content: chunkText };
-
-            const streamChunk = createStreamChunk(delta, this.model);
+            const streamChunk = createProxyStreamChunk(chunkText, this.model);
             await writer.write(encoder.encode(streamChunk));
-            isFirst = false;
-          }
-
-          // Check for function calls
-          const functionCalls = chunk.functionCalls();
-          if (functionCalls && functionCalls.length > 0) {
-            for (const [index, fc] of functionCalls.entries()) {
-              const toolCall: ToolCall = {
-                id: `call_${Date.now()}_${index}`,
-                type: 'function',
-                function: {
-                  name: fc.name,
-                  arguments: JSON.stringify(fc.args),
-                },
-              };
-
-              const delta = isFirst
-                ? { tool_calls: [toolCall], role: 'assistant' as const }
-                : { tool_calls: [toolCall] };
-
-              const streamChunk = createStreamChunk(delta, this.model);
-              await writer.write(encoder.encode(streamChunk));
-              isFirst = false;
-            }
           }
         }
 
         // Send final chunk
-        const finishChunk = createStreamChunk({}, this.model, 'stop');
+        const finishChunk = createProxyStreamChunk('', this.model, 'completed');
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {

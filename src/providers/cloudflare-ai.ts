@@ -1,6 +1,7 @@
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, Tool, ToolCall } from '../types';
-import { createOpenAIResponse, createStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { normalizeMessages } from '../utils/request';
 
 export class CloudflareAIProvider extends BaseProvider {
   constructor(
@@ -17,7 +18,7 @@ export class CloudflareAIProvider extends BaseProvider {
       }
 
       // Convert OpenAI messages to Cloudflare AI format
-      const messages = this.convertMessages(request.messages);
+      const messages = this.convertMessages(normalizeMessages(request));
 
       const params: any = {
         messages,
@@ -53,7 +54,7 @@ export class CloudflareAIProvider extends BaseProvider {
       content = response;
     }
 
-    const openAIResponse = createOpenAIResponse(content, this.model);
+    const openAIResponse = createProxyResponse(content, this.model);
 
     // Handle tool calls if present
     if (response.tool_calls && response.tool_calls.length > 0) {
@@ -78,8 +79,6 @@ export class CloudflareAIProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
-        let isFirst = true;
-
         // Cloudflare AI returns a ReadableStream
         const reader = cfStream.getReader();
 
@@ -107,33 +106,17 @@ export class CloudflareAIProvider extends BaseProvider {
           }
 
           // Send tool calls if present
-          if (toolCalls && toolCalls.length > 0) {
-            const delta = isFirst
-              ? {
-                  role: 'assistant' as const,
-                  tool_calls: this.convertToolCalls(toolCalls),
-                }
-              : {
-                  tool_calls: this.convertToolCalls(toolCalls),
-                };
-
-            const chunk = createStreamChunk(delta, this.model);
-            await writer.write(encoder.encode(chunk));
-            isFirst = false;
-          } else if (text) {
-            const delta = isFirst
-              ? { content: text, role: 'assistant' as const }
-              : { content: text };
-
-            const chunk = createStreamChunk(delta, this.model);
-            await writer.write(encoder.encode(chunk));
-            isFirst = false;
-          }
+            if (toolCalls && toolCalls.length > 0) {
+              const chunk = createProxyStreamChunk('', this.model);
+              await writer.write(encoder.encode(chunk));
+            } else if (text) {
+              const chunk = createProxyStreamChunk(text, this.model);
+              await writer.write(encoder.encode(chunk));
+            }
         }
 
         // Send final chunk
-        const finishReason = params.tools ? 'tool_calls' : 'stop';
-        const finishChunk = createStreamChunk({}, this.model, finishReason);
+        const finishChunk = createProxyStreamChunk('', this.model, 'completed');
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {

@@ -1,6 +1,6 @@
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, Tool, ToolCall } from '../types';
-import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class CloudflareAIProvider extends BaseProvider {
@@ -71,6 +71,7 @@ export class CloudflareAIProvider extends BaseProvider {
 
   private async handleStream(params: any): Promise<ProviderResponse> {
     const cfStream = await this.aiBinding.run(this.model, params);
+    const { responseId, itemId } = createStreamIds();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
@@ -79,6 +80,7 @@ export class CloudflareAIProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        let fullText = '';
         // Cloudflare AI returns a ReadableStream
         const reader = cfStream.getReader();
 
@@ -106,17 +108,26 @@ export class CloudflareAIProvider extends BaseProvider {
           }
 
           // Send tool calls if present
-            if (toolCalls && toolCalls.length > 0) {
-              const chunk = createProxyStreamChunk('', this.model);
-              await writer.write(encoder.encode(chunk));
-            } else if (text) {
-              const chunk = createProxyStreamChunk(text, this.model);
-              await writer.write(encoder.encode(chunk));
-            }
+          if (toolCalls && toolCalls.length > 0) {
+            continue;
+          }
+
+          if (text) {
+            fullText += text;
+            const chunk = createProxyStreamChunk(text, this.model, 'in_progress', {
+              responseId,
+              itemId,
+            });
+            await writer.write(encoder.encode(chunk));
+          }
         }
 
         // Send final chunk
-        const finishChunk = createProxyStreamChunk('', this.model, 'completed');
+        const finishChunk = createProxyStreamChunk('', this.model, 'completed', {
+          responseId,
+          itemId,
+          outputText: fullText,
+        });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {

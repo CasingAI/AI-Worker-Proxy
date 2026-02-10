@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
-import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
@@ -69,6 +69,7 @@ export class ZhipuProvider extends BaseProvider {
     params: OpenAI.ChatCompletionCreateParamsStreaming
   ): Promise<ProviderResponse> {
     const stream = await client.chat.completions.create(params);
+    const { responseId, itemId } = createStreamIds();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
@@ -76,16 +77,25 @@ export class ZhipuProvider extends BaseProvider {
 
     (async () => {
       try {
+        let fullText = '';
         for await (const chunk of stream) {
           const content = chunk.choices?.[0]?.delta?.content;
 
           if (content) {
-            const chunkData = createProxyStreamChunk(content, this.model);
+            fullText += content;
+            const chunkData = createProxyStreamChunk(content, this.model, 'in_progress', {
+              responseId,
+              itemId,
+            });
             await writer.write(encoder.encode(chunkData));
           }
         }
 
-        const finishChunk = createProxyStreamChunk('', this.model, 'completed');
+        const finishChunk = createProxyStreamChunk('', this.model, 'completed', {
+          responseId,
+          itemId,
+          outputText: fullText,
+        });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {

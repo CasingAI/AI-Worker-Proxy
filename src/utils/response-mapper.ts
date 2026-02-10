@@ -35,27 +35,32 @@ export function createProxyStreamChunk(
   text: string,
   model: string,
   status: 'in_progress' | 'completed' | 'failed' = 'in_progress',
-  responseId?: string
+  options?: {
+    responseId?: string;
+    itemId?: string;
+    outputText?: string;
+  }
 ): string {
+  const finalText = status === 'completed' ? (options?.outputText ?? text) : text;
   const chunk: ProxyResponse = {
-    id: responseId ?? `resp-${generateId()}`,
+    id: options?.responseId ?? `resp-${generateId()}`,
     object: 'response',
     created_at: Math.floor(Date.now() / 1000),
     model,
-    output_text: status === 'completed' ? text : '',
+    output_text: status === 'completed' ? finalText : '',
     status,
     usage: undefined,
     metadata: null,
     output: [
       {
-        id: `item-${generateId()}`,
+        id: options?.itemId ?? `item-${generateId()}`,
         type: 'message',
         status,
         role: 'assistant',
         content: [
           {
             type: 'output_text',
-            text,
+            text: finalText,
             annotations: [],
           },
         ],
@@ -64,6 +69,13 @@ export function createProxyStreamChunk(
   };
 
   return `data: ${JSON.stringify(chunk)}\n\n`;
+}
+
+export function createStreamIds(): { responseId: string; itemId: string } {
+  return {
+    responseId: `resp-${generateId()}`,
+    itemId: `item-${generateId()}`,
+  };
 }
 
 function generateId(length: number = 29): string {

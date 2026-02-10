@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, ToolCall } from '../types';
-import { createProxyResponse, createProxyStreamChunk } from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
 export class AnthropicProvider extends BaseProvider {
@@ -68,6 +68,7 @@ export class AnthropicProvider extends BaseProvider {
 
   private async handleStream(client: Anthropic, params: any): Promise<ProviderResponse> {
     const stream = await client.messages.stream(params);
+    const { responseId, itemId } = createStreamIds();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
@@ -76,6 +77,7 @@ export class AnthropicProvider extends BaseProvider {
     // Process stream in background
     (async () => {
       try {
+        let fullText = '';
         let toolCallBuffer: any = null;
 
         for await (const event of stream) {
@@ -90,7 +92,11 @@ export class AnthropicProvider extends BaseProvider {
           } else if (event.type === 'content_block_delta') {
             if (event.delta.type === 'text_delta') {
               const text = event.delta.text;
-              const chunk = createProxyStreamChunk(text, this.model);
+              fullText += text;
+              const chunk = createProxyStreamChunk(text, this.model, 'in_progress', {
+                responseId,
+                itemId,
+              });
               await writer.write(encoder.encode(chunk));
             } else if (event.delta.type === 'input_json_delta' && toolCallBuffer) {
               toolCallBuffer.input += event.delta.partial_json;
@@ -106,12 +112,15 @@ export class AnthropicProvider extends BaseProvider {
                   arguments: toolCallBuffer.input,
                 },
               };
-              const chunk = createProxyStreamChunk('', this.model);
-              await writer.write(encoder.encode(chunk));
+              void toolCall;
               toolCallBuffer = null;
             }
           } else if (event.type === 'message_stop') {
-            const chunk = createProxyStreamChunk('', this.model, 'completed');
+            const chunk = createProxyStreamChunk('', this.model, 'completed', {
+              responseId,
+              itemId,
+              outputText: fullText,
+            });
             await writer.write(encoder.encode(chunk));
             await writer.write(encoder.encode('data: [DONE]\n\n'));
           }

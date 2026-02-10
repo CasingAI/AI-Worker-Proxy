@@ -47,6 +47,7 @@
 | `ANTHROPIC_KEY_1` | `sk-ant-xxx...` | Claude API Key |
 | `GOOGLE_KEY_1` | `AIza...` | Google Gemini API Key |
 | `OPENAI_KEY_1` | `sk-proj-...` | OpenAI API Key |
+| `ZHIPU_KEY_1` | `zhipu-sk-xxx...` | 智谱（质谱）AI Key |
 
 保存后点击 “Save and Deploy” 即可完成部署。
 
@@ -80,6 +81,13 @@
       "provider": "google",
       "model": "gemini-1.5-flash",
       "apiKeys": ["GOOGLE_KEY_1"]
+    }
+  ],
+  "zhipu-boost": [
+    {
+      "provider": "zhipu",
+      "model": "glm-4.7",
+      "apiKeys": ["ZHIPU_KEY_1"]
     }
   ]
 }

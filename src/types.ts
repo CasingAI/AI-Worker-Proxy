@@ -83,7 +83,13 @@ export interface ProxyResponse {
 
 // Provider configuration
 export interface ProviderConfig {
-  provider: 'anthropic' | 'google' | 'openai' | 'openai-compatible' | 'cloudflare-ai';
+  provider:
+    | 'anthropic'
+    | 'google'
+    | 'openai'
+    | 'openai-compatible'
+    | 'cloudflare-ai'
+    | 'zhipu';
   model: string;
   apiKeys: string[]; // Array of env var names
   baseUrl?: string; // For openai-compatible providers

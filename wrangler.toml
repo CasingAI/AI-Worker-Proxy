@@ -40,12 +40,26 @@ ROUTES_CONFIG = '''
       "apiKeys": ["GOOGLE_KEY_1"]
     }
   ],
+  "zhipu-latest": [
+    {
+      "provider": "zhipu",
+      "model": "glm-4.7",
+      "apiKeys": ["ZHIPU_KEY_1"]
+    }
+  ],
   "nvidia": [
     {
       "provider": "openai-compatible",
       "baseUrl": "https://integrate.api.nvidia.com/v1",
       "model": "nvidia/llama-3.1-nemotron-70b-instruct",
       "apiKeys": ["NVIDIA_KEY_1"]
+    }
+  ],
+  "glm-4-flash": [
+    {
+      "provider": "zhipu",
+      "model": "glm-4-flash",
+      "apiKeys": ["ZHIPU_KEY_1"]
     }
   ]
 }
@@ -56,5 +70,6 @@ PROXY_AUTH_TOKEN = "testGiuyghi"
 # - PROXY_AUTH_TOKEN
 # - ANTHROPIC_KEY_1, ANTHROPIC_KEY_2
 # - GOOGLE_KEY_1
+# - ZHIPU_KEY_1
 # - NVIDIA_KEY_1
 # - OPENAI_KEY_1, GROQ_KEY_1, etc.

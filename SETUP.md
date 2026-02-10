@@ -49,6 +49,7 @@ PROXY_AUTH_TOKEN=my-secret-token
 ANTHROPIC_KEY_1=sk-ant-xxxxx
 GOOGLE_KEY_1=AIzaxxxxx
 OPENAI_KEY_1=sk-xxxxx
+ZHIPU_KEY_1=zhipu-sk-xxxxx
 ```
 
 For production, use Wrangler secrets:
@@ -57,6 +58,7 @@ For production, use Wrangler secrets:
 wrangler secret put PROXY_AUTH_TOKEN
 wrangler secret put ANTHROPIC_KEY_1
 wrangler secret put GOOGLE_KEY_1
+wrangler secret put ZHIPU_KEY_1
 # ... and so on
 ```
 

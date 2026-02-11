@@ -4,7 +4,7 @@ import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 
-const DEFAULT_BASE_URL = 'https://gateway.ai.cloudflare.com/v1/23ec159df1a5831b2b2d48ec1a7073d4/casing-gateway-1/custom-zai/v4/';
+const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4/chat/completions';
 // const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
 
 export class ZhipuProvider extends BaseProvider {

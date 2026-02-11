@@ -86,12 +86,6 @@ export interface ResponseFailedEvent {
   response: ResponseObject;
 }
 
-export interface ProviderRawEvent {
-  type: 'provider_raw_event';
-  provider: string;
-  event: unknown;
-}
-
 export type ResponseStreamEvent =
   | ResponseCreatedEvent
   | ResponseOutputItemAddedEvent
@@ -100,5 +94,4 @@ export type ResponseStreamEvent =
   | ResponseOutputItemDoneEvent
   | ResponseCompletedEvent
   | ResponseFailedEvent
-  | ProviderRawEvent
   | { type: string; [key: string]: unknown };

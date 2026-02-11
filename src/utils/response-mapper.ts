@@ -65,13 +65,14 @@ export function createProxyStreamChunk(
     responseId?: string;
     itemId?: string;
     outputText?: string;
+    rawEvent?: unknown;
   }
 ): string {
   const itemId = options?.itemId ?? `item-${generateId()}`;
   const outputText = options?.outputText ?? text;
 
   if (status === 'in_progress') {
-    const event = {
+    const event: Record<string, unknown> = {
       type: 'response.output_text.delta',
       item_id: itemId,
       output_index: 0,
@@ -79,7 +80,7 @@ export function createProxyStreamChunk(
       delta: text,
     };
 
-    return `data: ${JSON.stringify(event)}\n\n`;
+    return `data: ${JSON.stringify(attachProviderRawEvent(event, options?.rawEvent))}\n\n`;
   }
 
   const response = createProxyResponse(outputText, model, {
@@ -88,7 +89,7 @@ export function createProxyStreamChunk(
     status: 'completed',
   });
 
-  const outputTextDoneEvent = {
+  const outputTextDoneEvent: Record<string, unknown> = {
     type: 'response.output_text.done',
     item_id: itemId,
     output_index: 0,
@@ -96,26 +97,22 @@ export function createProxyStreamChunk(
     text: outputText,
   };
 
-  const outputItemDoneEvent = {
+  const outputItemDoneEvent: Record<string, unknown> = {
     type: 'response.output_item.done',
     output_index: 0,
     item: response.output[0],
   };
 
-  const completedEvent = {
+  const completedEvent: Record<string, unknown> = {
     type: 'response.completed',
     response,
   };
 
   return (
-    `data: ${JSON.stringify(outputTextDoneEvent)}\n\n` +
-    `data: ${JSON.stringify(outputItemDoneEvent)}\n\n` +
-    `data: ${JSON.stringify(completedEvent)}\n\n`
+    `data: ${JSON.stringify(attachProviderRawEvent(outputTextDoneEvent, options?.rawEvent))}\n\n` +
+    `data: ${JSON.stringify(attachProviderRawEvent(outputItemDoneEvent, options?.rawEvent))}\n\n` +
+    `data: ${JSON.stringify(attachProviderRawEvent(completedEvent, options?.rawEvent))}\n\n`
   );
-}
-
-export function createProviderRawEventChunk(provider: string, event: unknown): string {
-  return `data: ${JSON.stringify({ type: 'provider_raw_event', provider, event })}\n\n`;
 }
 
 export function createResponseStartedChunk(responseId: string, itemId: string | undefined, model: string): string {
@@ -155,6 +152,20 @@ export function createStreamIds(): { responseId: string; itemId: string } {
   return {
     responseId: `resp-${generateId()}`,
     itemId: `item-${generateId()}`,
+  };
+}
+
+function attachProviderRawEvent<T extends Record<string, unknown>>(
+  event: T,
+  rawEvent?: unknown
+): T & { __provider_raw_event?: unknown } {
+  if (rawEvent === undefined) {
+    return event;
+  }
+
+  return {
+    ...event,
+    __provider_raw_event: rawEvent,
   };
 }
 

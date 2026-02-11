@@ -1,7 +1,13 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
+import {
+  createProviderRawEventChunk,
+  createProxyResponse,
+  createProxyStreamChunk,
+  createResponseStartedChunk,
+  createStreamIds,
+} from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-normalizer';
 
@@ -83,6 +89,7 @@ export class ZhipuProvider extends BaseProvider {
  
         let fullText = '';
         for await (const chunk of stream) {
+          await writer.write(encoder.encode(createProviderRawEventChunk('zhipu', chunk)));
           const content = chunk.choices?.[0]?.delta?.content;
 
           if (content) {

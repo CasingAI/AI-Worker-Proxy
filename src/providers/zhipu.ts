@@ -3,6 +3,7 @@ import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
+import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-normalizer';
 
 const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4/';
 // const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
@@ -128,20 +129,33 @@ export class ZhipuProvider extends BaseProvider {
       });
     }
 
-    return normalized.map((message) => ({
-      role: message.role,
-      content: message.content ?? '',
-      name: message.name,
-      tool_calls: message.tool_calls?.map((toolCall) => ({
-        id: toolCall.id,
-        type: toolCall.type,
-        function: {
-          name: toolCall.function.name,
-          arguments: toolCall.function.arguments,
-        },
-      })),
-      tool_call_id: message.tool_call_id,
-    })) as OpenAI.ChatCompletionMessageParam[];
+    return normalized.map((message) => {
+      const toolCalls = message.tool_calls
+        ?.map((toolCall) => {
+          const functionName = toolCall.function?.name;
+          if (!functionName) {
+            return undefined;
+          }
+
+          return {
+            id: toolCall.id,
+            type: toolCall.type,
+            function: {
+              name: functionName,
+              arguments: toolCall.function.arguments ?? '{}',
+            },
+          };
+        })
+        .filter((toolCall): toolCall is OpenAI.ChatCompletionMessageToolCall => Boolean(toolCall));
+
+      return {
+        role: message.role,
+        content: message.content ?? '',
+        name: message.name,
+        tool_calls: toolCalls,
+        tool_call_id: message.tool_call_id,
+      };
+    }) as OpenAI.ChatCompletionMessageParam[];
   }
 
   private extractAssistantMessage(message?: OpenAI.ChatCompletionMessage): string {
@@ -154,16 +168,17 @@ export class ZhipuProvider extends BaseProvider {
 }
 
 function mapToolsToChatTools(tools?: Tool[]): OpenAI.ChatCompletionTool[] | undefined {
-  if (!tools || tools.length === 0) {
+  const normalizedTools = normalizeFunctionTools(tools);
+  if (normalizedTools.length === 0) {
     return undefined;
   }
 
-  return tools.map((tool) => ({
+  return normalizedTools.map((tool) => ({
     type: 'function',
     function: {
-      name: tool.function.name,
-      description: tool.function.description || '',
-      parameters: tool.function.parameters || {},
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
     },
   }));
 }
@@ -171,22 +186,5 @@ function mapToolsToChatTools(tools?: Tool[]): OpenAI.ChatCompletionTool[] | unde
 function mapToolChoice(
   choice?: OpenAIChatRequest['tool_choice']
 ): OpenAI.ChatCompletionToolChoiceOption | undefined {
-  if (!choice) {
-    return undefined;
-  }
-
-  if (choice === 'auto' || choice === 'none') {
-    return choice;
-  }
-
-  if (choice.type === 'function') {
-    return {
-      type: 'function',
-      function: {
-        name: choice.function.name,
-      },
-    };
-  }
-
-  return undefined;
+  return mapToolChoiceToChat(choice) as OpenAI.ChatCompletionToolChoiceOption | undefined;
 }

@@ -2,6 +2,7 @@ import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, Tool, ToolCall } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createStreamIds, createResponseStartedChunk } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
+import { normalizeFunctionTools } from '../utils/tool-normalizer';
 
 export class CloudflareAIProvider extends BaseProvider {
   constructor(
@@ -182,28 +183,15 @@ export class CloudflareAIProvider extends BaseProvider {
 
   // Convert OpenAI tools format to Cloudflare AI format
   private convertTools(tools: Tool[]): any[] {
-    return tools.map((tool) => {
-      // Cloudflare AI supports both formats:
-      // 1. Direct format: { name, description, parameters }
-      // 2. OpenAI format: { type: "function", function: { name, description, parameters } }
-
-      if (tool.type === 'function') {
-        // Return OpenAI-compatible format (Cloudflare supports this)
-        return {
-          type: 'function',
-          function: {
-            name: tool.function.name,
-            description: tool.function.description || '',
-            parameters: tool.function.parameters || {
-              type: 'object',
-              properties: {},
-            },
-          },
-        };
-      }
-
-      return tool;
-    });
+    const normalizedTools = normalizeFunctionTools(tools);
+    return normalizedTools.map((tool) => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      },
+    }));
   }
 
   // Convert Cloudflare AI tool_calls to OpenAI format

@@ -18,12 +18,23 @@ export interface ToolCall {
 
 export interface Tool {
   type: 'function';
-  function: {
+  function?: {
     name: string;
     description?: string;
     parameters?: Record<string, unknown>;
   };
+  name?: string;
+  description?: string;
+  parameters?: Record<string, unknown>;
+  strict?: boolean;
 }
+
+export type ToolChoice =
+  | 'auto'
+  | 'none'
+  | 'required'
+  | { type: 'function'; function: { name: string } }
+  | { type: 'function'; name: string };
 
 export interface ProxyInputItem {
   type?: 'message';
@@ -43,7 +54,7 @@ export interface OpenAIChatRequest {
   stop?: string | string[];
   stream?: boolean;
   tools?: Tool[];
-  tool_choice?: 'auto' | 'none' | { type: 'function'; function: { name: string } };
+  tool_choice?: ToolChoice;
   previous_response_id?: string;
   max_tool_calls?: number;
   store?: boolean;

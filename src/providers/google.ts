@@ -3,6 +3,7 @@ import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
+import { normalizeFunctionTools } from '../utils/tool-normalizer';
 
 export class GoogleProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -15,17 +16,19 @@ export class GoogleProvider extends BaseProvider {
       const { systemInstruction, contents } = this.convertMessages(messages);
 
       // Convert tools if present
-      const tools = request.tools
-        ? [
-            {
-              functionDeclarations: request.tools.map((tool) => ({
-                name: tool.function.name,
-                description: tool.function.description || '',
-                parameters: tool.function.parameters || {},
-              })),
-            },
-          ]
-        : undefined;
+      const normalizedTools = normalizeFunctionTools(request.tools);
+      const tools =
+        normalizedTools.length > 0
+          ? [
+              {
+                functionDeclarations: normalizedTools.map((tool) => ({
+                  name: tool.name,
+                  description: tool.description,
+                  parameters: tool.parameters,
+                })),
+              },
+            ]
+          : undefined;
 
       const generationConfig: any = {
         temperature: request.temperature,

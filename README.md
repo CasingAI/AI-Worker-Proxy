@@ -1,4 +1,4 @@
-# 🚀 AI Worker Proxy：一套兼容所有 AI 模型的统一入口（永久免费 + 100% 稳定）
+# 🚀 AI Worker Proxy：各种AI供应商统一转为 Responses API
 
 [![部署到 Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange?logo=cloudflare)](https://workers.cloudflare.com/)
 [![兼容 OpenAI](https://img.shields.io/badge/OpenAI-Compatible-green)](https://openai.com/)

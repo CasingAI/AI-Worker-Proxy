@@ -114,6 +114,10 @@ export function createProxyStreamChunk(
   );
 }
 
+export function createProviderRawEventChunk(provider: string, event: unknown): string {
+  return `data: ${JSON.stringify({ type: 'provider_raw_event', provider, event })}\n\n`;
+}
+
 export function createResponseStartedChunk(responseId: string, itemId: string | undefined, model: string): string {
   const response = createProxyResponse('', model, {
     responseId,

@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
 import { buildResponseInput, extractInstructions } from '../utils/request';
+import { mapToolChoiceToResponses, normalizeFunctionTools } from '../utils/tool-normalizer';
 
 export class OpenAIProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -19,7 +20,7 @@ export class OpenAIProvider extends BaseProvider {
         top_p: request.top_p,
         max_output_tokens: request.max_output_tokens ?? request.max_tokens,
         tools: mapToolsToResponses(request.tools),
-        tool_choice: request.tool_choice as any,
+        tool_choice: mapToolChoiceToResponses(request.tool_choice) as any,
         previous_response_id: request.previous_response_id,
         store: request.store,
       };
@@ -87,15 +88,16 @@ export class OpenAIProvider extends BaseProvider {
 }
 
 function mapToolsToResponses(tools?: Tool[]): OpenAI.Responses.Tool[] | undefined {
-  if (!tools || tools.length === 0) {
+  const normalizedTools = normalizeFunctionTools(tools);
+  if (normalizedTools.length === 0) {
     return undefined;
   }
 
-  return tools.map((tool) => ({
+  return normalizedTools.map((tool) => ({
     type: 'function',
-    name: tool.function.name,
-    description: tool.function.description || '',
-    parameters: tool.function.parameters || null,
-    strict: true,
+    name: tool.name,
+    description: tool.description,
+    parameters: tool.parameters,
+    strict: tool.strict,
   }));
 }

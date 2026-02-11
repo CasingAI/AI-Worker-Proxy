@@ -3,6 +3,7 @@ import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, OpenAIMessage, ToolCall } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
+import { normalizeFunctionTools } from '../utils/tool-normalizer';
 
 export class AnthropicProvider extends BaseProvider {
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
@@ -14,10 +15,11 @@ export class AnthropicProvider extends BaseProvider {
       const { system, messages: anthropicMessages } = this.convertMessages(messages);
 
       // Convert tools if present
-      const tools = request.tools?.map((tool) => ({
-        name: tool.function.name,
-        description: tool.function.description || '',
-        input_schema: tool.function.parameters || {},
+      const normalizedTools = normalizeFunctionTools(request.tools);
+      const tools = normalizedTools.map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        input_schema: tool.parameters,
       }));
 
       const params: any = {

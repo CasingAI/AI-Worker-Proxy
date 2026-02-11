@@ -1,13 +1,7 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import { OpenAIChatRequest, ProviderResponse, Tool } from '../types';
-import {
-  createProviderRawEventChunk,
-  createProxyResponse,
-  createProxyStreamChunk,
-  createResponseStartedChunk,
-  createStreamIds,
-} from '../utils/response-mapper';
+import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-normalizer';
 
@@ -88,15 +82,17 @@ export class ZhipuProvider extends BaseProvider {
         await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
  
         let fullText = '';
+        let lastRawEvent: unknown;
         for await (const chunk of stream) {
-          await writer.write(encoder.encode(createProviderRawEventChunk('zhipu', chunk)));
           const content = chunk.choices?.[0]?.delta?.content;
 
           if (content) {
             fullText += content;
+            lastRawEvent = chunk;
             const chunkData = createProxyStreamChunk(content, this.model, 'in_progress', {
               responseId,
               itemId,
+              rawEvent: chunk,
             });
             await writer.write(encoder.encode(chunkData));
           }
@@ -106,6 +102,7 @@ export class ZhipuProvider extends BaseProvider {
           responseId,
           itemId,
           outputText: fullText,
+          rawEvent: lastRawEvent,
         });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));

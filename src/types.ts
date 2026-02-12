@@ -36,11 +36,39 @@ export type ToolChoice =
   | { type: 'function'; function: { name: string } }
   | { type: 'function'; name: string };
 
-export interface ProxyInputItem {
+export type ProxyInputRole = 'system' | 'user' | 'assistant' | 'developer' | 'tool' | 'function';
+
+export interface ProxyMessageInputItem {
   type?: 'message';
-  role: 'system' | 'user' | 'assistant' | 'developer' | 'tool' | 'function';
-  content: string;
+  role: ProxyInputRole;
+  content: string | Array<Record<string, unknown>>;
+  name?: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
 }
+
+export interface ProxyFunctionCallOutputInputItem {
+  type: 'function_call_output';
+  call_id?: string;
+  callId?: string;
+  output?: unknown;
+  content?: unknown;
+}
+
+export interface ProxyFunctionCallInputItem {
+  type: 'function_call';
+  id?: string;
+  call_id?: string;
+  callId?: string;
+  name?: string;
+  arguments?: string | Record<string, unknown>;
+}
+
+export type ProxyInputItem =
+  | ProxyMessageInputItem
+  | ProxyFunctionCallOutputInputItem
+  | ProxyFunctionCallInputItem
+  | Record<string, unknown>;
 
 export interface OpenAIChatRequest {
   model: string;

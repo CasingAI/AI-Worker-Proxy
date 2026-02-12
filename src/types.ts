@@ -74,6 +74,7 @@ export interface ProxyResponseOutputItem {
   role?: 'assistant' | 'user' | 'system';
   content?: ProxyResponseContentPart[];
   callId?: string;
+  call_id?: string;
   name?: string;
   arguments?: string;
 }

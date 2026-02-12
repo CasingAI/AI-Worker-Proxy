@@ -70,6 +70,20 @@ export interface ResponseOutputTextDoneEvent {
   text: string;
 }
 
+export interface ResponseFunctionCallArgumentsDeltaEvent {
+  type: 'response.function_call_arguments.delta';
+  item_id: string;
+  output_index: number;
+  delta: string;
+}
+
+export interface ResponseFunctionCallArgumentsDoneEvent {
+  type: 'response.function_call_arguments.done';
+  item_id: string;
+  output_index: number;
+  arguments: string;
+}
+
 export interface ResponseOutputItemDoneEvent {
   type: 'response.output_item.done';
   output_index: number;
@@ -91,6 +105,8 @@ export type ResponseStreamEvent =
   | ResponseOutputItemAddedEvent
   | ResponseOutputTextDeltaEvent
   | ResponseOutputTextDoneEvent
+  | ResponseFunctionCallArgumentsDeltaEvent
+  | ResponseFunctionCallArgumentsDoneEvent
   | ResponseOutputItemDoneEvent
   | ResponseCompletedEvent
   | ResponseFailedEvent

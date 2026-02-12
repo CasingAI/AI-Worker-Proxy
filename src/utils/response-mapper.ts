@@ -66,6 +66,7 @@ export function createProxyStreamChunk(
     itemId?: string;
     outputText?: string;
     rawEvent?: unknown;
+    additionalOutputItems?: ProxyResponseOutputItem[];
   }
 ): string {
   const itemId = options?.itemId ?? `item-${generateId()}`;
@@ -88,6 +89,9 @@ export function createProxyStreamChunk(
     itemId,
     status: 'completed',
   });
+  if (options?.additionalOutputItems?.length) {
+    response.output.push(...options.additionalOutputItems);
+  }
 
   const outputTextDoneEvent: Record<string, unknown> = {
     type: 'response.output_text.done',

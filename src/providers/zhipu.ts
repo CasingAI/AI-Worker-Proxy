@@ -211,33 +211,50 @@ export class ZhipuProvider extends BaseProvider {
       });
     }
 
-    return normalized.map((message) => {
-      const toolCalls = message.tool_calls
-        ?.map((toolCall) => {
-          const functionName = toolCall.function?.name;
-          if (!functionName) {
-            return undefined;
-          }
+    const chatMessages: OpenAI.ChatCompletionMessageParam[] = [];
+    for (const message of normalized) {
+      const role = mapMessageRoleForChat(message.role);
+      if (!role) {
+        continue;
+      }
 
-          return {
-            id: toolCall.id,
-            type: toolCall.type,
-            function: {
-              name: functionName,
-              arguments: toolCall.function.arguments ?? '{}',
-            },
-          };
-        })
-        .filter((toolCall): toolCall is OpenAI.ChatCompletionMessageToolCall => Boolean(toolCall));
+      if (role === 'tool' && !message.tool_call_id) {
+        continue;
+      }
 
-      return {
-        role: message.role,
+      const toolCalls =
+        role === 'assistant'
+          ? message.tool_calls
+              ?.map((toolCall) => {
+                const functionName = toolCall.function?.name;
+                if (!functionName) {
+                  return undefined;
+                }
+
+                return {
+                  id: toolCall.id,
+                  type: toolCall.type,
+                  function: {
+                    name: functionName,
+                    arguments: toolCall.function.arguments ?? '{}',
+                  },
+                };
+              })
+              .filter(
+                (toolCall): toolCall is OpenAI.ChatCompletionMessageToolCall => Boolean(toolCall)
+              )
+          : undefined;
+
+      chatMessages.push({
+        role,
         content: message.content ?? '',
         name: message.name,
         tool_calls: toolCalls,
         tool_call_id: message.tool_call_id,
-      };
-    }) as OpenAI.ChatCompletionMessageParam[];
+      } as OpenAI.ChatCompletionMessageParam);
+    }
+
+    return chatMessages;
   }
 
   private extractAssistantMessage(message?: OpenAI.ChatCompletionMessage): string {
@@ -381,6 +398,21 @@ function mapToolChoice(
   choice?: OpenAIChatRequest['tool_choice']
 ): OpenAI.ChatCompletionToolChoiceOption | undefined {
   return mapToolChoiceToChat(choice) as OpenAI.ChatCompletionToolChoiceOption | undefined;
+}
+
+function mapMessageRoleForChat(
+  role: string
+): 'system' | 'user' | 'assistant' | 'tool' | undefined {
+  if (role === 'developer') {
+    return 'system';
+  }
+  if (role === 'function') {
+    return 'tool';
+  }
+  if (role === 'system' || role === 'user' || role === 'assistant' || role === 'tool') {
+    return role;
+  }
+  return undefined;
 }
 
 function parseToolCallDeltas(toolCalls: unknown): ParsedToolCallDelta[] {

@@ -36,6 +36,13 @@ ROUTES_CONFIG = '''
       "apiKeys": ["ZHIPU_KEY_1"]
     }
   ],
+  "zhipu-flash-latest": [
+    {
+      "provider": "zhipu",
+      "model": "glm-4.7-flash",
+      "apiKeys": ["ZHIPU_KEY_1"]
+    }
+  ],
   "fallback-mix": [
     {
       "provider": "zhipu",

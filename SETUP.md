@@ -23,9 +23,14 @@ ROUTES_CONFIG = '''
 {
   "your-model-name": [
     {
-      "provider": "anthropic",
-      "model": "claude-opus-4-20250514",
-      "apiKeys": ["ANTHROPIC_KEY_1"]
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "apiKeys": ["OPENAI_KEY_1"]
+    },
+    {
+      "provider": "zhipu",
+      "model": "glm-4.7",
+      "apiKeys": ["ZHIPU_KEY_1"]
     }
   ]
 }
@@ -46,8 +51,6 @@ Edit `.dev.vars` and add your API keys:
 
 ```
 PROXY_AUTH_TOKEN=my-secret-token
-ANTHROPIC_KEY_1=sk-ant-xxxxx
-GOOGLE_KEY_1=AIzaxxxxx
 OPENAI_KEY_1=sk-xxxxx
 ZHIPU_KEY_1=zhipu-sk-xxxxx
 ```
@@ -56,8 +59,7 @@ For production, use Wrangler secrets:
 
 ```bash
 wrangler secret put PROXY_AUTH_TOKEN
-wrangler secret put ANTHROPIC_KEY_1
-wrangler secret put GOOGLE_KEY_1
+wrangler secret put OPENAI_KEY_1
 wrangler secret put ZHIPU_KEY_1
 # ... and so on
 ```
@@ -111,11 +113,6 @@ Now every push to `main` will automatically deploy!
 - Verify API keys are set correctly
 - Check the provider and model names in your config
 - Look at the logs in Cloudflare dashboard
-
-### Cloudflare AI not working
-
-- Make sure you have the `[ai]` binding in `wrangler.toml`
-- Cloudflare AI is only available on certain plans
 
 ### TypeScript errors
 

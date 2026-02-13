@@ -2,10 +2,6 @@ name = "ai-worker-proxy"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
-# Cloudflare AI binding (optional)
-[ai]
-binding = "AI"
-
 # Cloudflare dashboard logs (optional)
 [observability]
 [observability.logs]
@@ -26,40 +22,30 @@ persist = false
 # Model routing configuration (example - will be replaced by GitHub Actions)
 ROUTES_CONFIG = '''
 {
-  "deep-think": [
+  "openai-main": [
     {
-      "provider": "anthropic",
-      "model": "claude-opus-4-20250514",
-      "apiKeys": ["ANTHROPIC_KEY_1", "ANTHROPIC_KEY_2"]
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "apiKeys": ["OPENAI_KEY_1", "OPENAI_KEY_2"]
     }
   ],
-  "fast": [
-    {
-      "provider": "google",
-      "model": "gemini-2.0-flash-exp",
-      "apiKeys": ["GOOGLE_KEY_1"]
-    }
-  ],
-  "zhipu-flash-latest": [
+  "glm-main": [
     {
       "provider": "zhipu",
       "model": "glm-4.7-flash",
       "apiKeys": ["ZHIPU_KEY_1"]
     }
   ],
-  "nvidia": [
-    {
-      "provider": "openai-compatible",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "apiKeys": ["NVIDIA_KEY_1"]
-    }
-  ],
-  "glm-4-flash": [
+  "fallback-mix": [
     {
       "provider": "zhipu",
-      "model": "glm-4-flash",
+      "model": "glm-4.7",
       "apiKeys": ["ZHIPU_KEY_1"]
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "apiKeys": ["OPENAI_KEY_1"]
     }
   ]
 }
@@ -68,8 +54,5 @@ PROXY_AUTH_TOKEN = "testGiuyghi"
 
 # Secrets to set in Cloudflare Dashboard:
 # - PROXY_AUTH_TOKEN
-# - ANTHROPIC_KEY_1, ANTHROPIC_KEY_2
-# - GOOGLE_KEY_1
+# - OPENAI_KEY_1, OPENAI_KEY_2
 # - ZHIPU_KEY_1
-# - NVIDIA_KEY_1
-# - OPENAI_KEY_1, GROQ_KEY_1, etc.

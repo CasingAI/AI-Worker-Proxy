@@ -140,16 +140,10 @@ export interface ProxyResponse {
 
 // Provider configuration
 export interface ProviderConfig {
-  provider:
-    | 'anthropic'
-    | 'google'
-    | 'openai'
-    | 'openai-compatible'
-    | 'cloudflare-ai'
-    | 'zhipu';
+  provider: 'openai' | 'zhipu';
   model: string;
   apiKeys: string[]; // Array of env var names
-  baseUrl?: string; // For openai-compatible providers
+  baseUrl?: string; // Optional custom base URL (primarily for zhipu)
 }
 
 export interface RouteConfig {
@@ -158,7 +152,6 @@ export interface RouteConfig {
 
 // Environment bindings
 export interface Env {
-  AI?: any; // Cloudflare AI binding
   PROXY_AUTH_TOKEN: string; // Cloudflare Secret (set in Dashboard)
   ROUTES_CONFIG: string; // Environment variable (injected from GitHub Variable)
   [key: string]: any; // Dynamic API keys (Cloudflare Secrets, set in Dashboard)

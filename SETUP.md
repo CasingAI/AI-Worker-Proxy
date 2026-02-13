@@ -1,22 +1,27 @@
-# Quick Setup Guide
+# 快速部署指南
 
-## Prerequisites
+## 核心职责
 
-- Node.js 20+ installed
-- Cloudflare account
-- API keys for the AI providers you want to use
+本项目的主要职责是对外提供一个 OpenAI Responses API 兼容入口，
+并在内部将请求路由到 OpenAI 与智谱 GLM，统一鉴权、Key 轮换与故障回退策略。
 
-## Step-by-Step Setup
+## 前置条件
 
-### 1. Install Dependencies
+- 已安装 Node.js 20+
+- 拥有 Cloudflare 账号
+- 准备好要使用的 API Key（OpenAI / Zhipu）
+
+## 分步配置
+
+### 1. 安装依赖
 
 ```bash
 npm install
 ```
 
-### 2. Configure Your Model Names
+### 2. 配置模型别名
 
-Edit `wrangler.toml` and customize the `ROUTES_CONFIG` section:
+编辑 `wrangler.toml`，按需修改 `ROUTES_CONFIG`：
 
 ```toml
 ROUTES_CONFIG = '''
@@ -37,17 +42,17 @@ ROUTES_CONFIG = '''
 '''
 ```
 
-**Note**: Use model names (e.g., `"fast"`, `"deep-think"`) in your API requests, not URL paths.
+**注意**：在 API 请求里请使用模型别名（如 `"fast"`、`"deep-think"`），不要使用 URL 路径做路由。
 
-### 3. Set Up API Keys
+### 3. 配置 API Key
 
-For local development, create a `.dev.vars` file:
+本地开发先创建 `.dev.vars` 文件：
 
 ```bash
 cp .dev.vars.example .dev.vars
 ```
 
-Edit `.dev.vars` and add your API keys:
+编辑 `.dev.vars`，填入你的密钥：
 
 ```
 PROXY_AUTH_TOKEN=my-secret-token
@@ -55,22 +60,22 @@ OPENAI_KEY_1=sk-xxxxx
 ZHIPU_KEY_1=zhipu-sk-xxxxx
 ```
 
-For production, use Wrangler secrets:
+生产环境建议使用 Wrangler Secrets：
 
 ```bash
 wrangler secret put PROXY_AUTH_TOKEN
 wrangler secret put OPENAI_KEY_1
 wrangler secret put ZHIPU_KEY_1
-# ... and so on
+# ... 按需继续添加
 ```
 
-### 4. Test Locally
+### 4. 本地验证
 
 ```bash
 npm run dev
 ```
 
-Test the endpoint:
+可用以下命令测试接口：
 
 ```bash
 curl -X POST http://localhost:8787/v1/chat/completions \
@@ -82,58 +87,58 @@ curl -X POST http://localhost:8787/v1/chat/completions \
   }'
 ```
 
-### 5. Deploy to Cloudflare
+### 5. 部署到 Cloudflare
 
 ```bash
 npm run deploy
 ```
 
-### 6. Set Up GitHub Actions (Optional)
+### 6. （可选）配置 GitHub Actions 自动部署
 
-For automatic deployment on push to main:
+如果你想在 push 到 `main` 时自动部署：
 
-1. Go to your Cloudflare dashboard
-2. Get your API token: https://dash.cloudflare.com/profile/api-tokens
-3. Get your Account ID from the dashboard
-4. Add these as GitHub secrets:
+1. 打开 Cloudflare 控制台
+2. 创建 API Token：https://dash.cloudflare.com/profile/api-tokens
+3. 在控制台获取 Account ID
+4. 把下列值添加为 GitHub Secrets：
    - `CLOUDFLARE_API_TOKEN`
    - `CLOUDFLARE_ACCOUNT_ID`
 
-Now every push to `main` will automatically deploy!
+之后每次推送到 `main` 都会自动部署。
 
-## Common Issues
+## 常见问题
 
-### "Unauthorized" error
+### 出现 "Unauthorized" 错误
 
-- Check that your `Authorization` header matches `PROXY_AUTH_TOKEN`
-- Format: `Authorization: Bearer your-token-here`
+- 检查 `Authorization` 请求头是否与 `PROXY_AUTH_TOKEN` 一致
+- 正确格式：`Authorization: Bearer your-token-here`
 
-### "All providers failed"
+### 出现 "All providers failed" 错误
 
-- Verify API keys are set correctly
-- Check the provider and model names in your config
-- Look at the logs in Cloudflare dashboard
+- 确认 API Key 配置正确
+- 确认 `ROUTES_CONFIG` 中 provider 与 model 名称正确
+- 在 Cloudflare Workers 日志里查看具体错误
 
-### TypeScript errors
+### TypeScript 类型检查失败
 
 ```bash
 npm run type-check
 ```
 
-### Linting errors
+### Lint 检查失败
 
 ```bash
 npm run lint
 npm run format
 ```
 
-## Next Steps
+## 下一步建议
 
-- Read the full [README.md](README.md)
-- Check out [examples/](examples/) for client code
-- Customize error handling in `src/utils/error-handler.ts`
-- Add your own providers in `src/providers/`
+- 阅读完整文档 [README.md](README.md)
+- 查看客户端示例目录 [examples/](examples/)
+- 按需定制 `src/utils/error-handler.ts` 的错误处理
+- 持续完善 `src/providers/openai.ts` 与 `src/providers/zhipu.ts` 的 Responses 兼容细节
 
-## Support
+## 支持
 
-Open an issue on GitHub if you need help!
+如果需要帮助，请在 GitHub 提交 Issue。

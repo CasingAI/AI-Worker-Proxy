@@ -9,6 +9,15 @@
 
 ---
 
+## 🎯 项目主要职责
+
+- **统一协议**：对外只暴露 OpenAI Responses API 兼容接口。  
+- **统一路由**：对内把请求路由到 OpenAI 或智谱 GLM。  
+- **统一高可用策略**：内置 API Key 轮换与多供应商故障回退（fallback）。  
+- **统一调用体验**：让上层应用不感知底层厂商差异。  
+
+---
+
 ## 🔥 这套代理有什么好处
 
 - **多模型自动切换**：OpenAI 出问题时自动切到其它厂商，保持服务可用。  
@@ -110,7 +119,7 @@ print(response.output_text)
 ```
 
 ### 其它客户端（如 Chatbox、NextChat、typingmind）
-- **Base URL：** `https://ai-proxy.YOUR-USERNAME.workers.dev/v1`  
+- **基础地址：** `https://ai-proxy.YOUR-USERNAME.workers.dev/v1`  
 - **API Key：** 你在 Cloudflare 配置的 `PROXY_AUTH_TOKEN`
 
 ---

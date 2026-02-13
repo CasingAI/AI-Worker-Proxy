@@ -1,28 +1,31 @@
 ---
-name: Feature Request
-about: Suggest an idea for this project
+name: 功能建议
+about: 为本项目提出一个新想法
 title: '[FEATURE] '
 labels: enhancement
 assignees: 'zxcloli666'
 ---
 
-## 💡 Feature Description
-A clear description of the feature you'd like.
+## 💡 功能描述
+请清晰描述你希望新增的能力。
 
-## 🎯 Problem It Solves
-What problem does this feature solve?
+## 🎯 与核心职责的一致性
+请说明这个功能如何增强项目核心职责（OpenAI + Zhipu GLM 的 OpenAI Responses API 兼容能力）。
 
-## 🚀 Proposed Solution
-How should this feature work?
+## 🎯 要解决的问题
+这个功能要解决什么问题？
 
-## 🔄 Alternatives Considered
-What alternatives have you considered?
+## 🚀 建议方案
+你希望这个功能如何工作？
 
-## 📊 Use Case
-Describe your use case for this feature.
+## 🔄 备选方案
+你考虑过哪些替代方案？
 
-## 🎨 Examples
-Any examples or mockups?
+## 📊 使用场景
+请描述你的实际使用场景。
 
-## 📝 Additional Context
-Any other context about the feature.
+## 🎨 示例 / 原型
+如有示例、参考链接或原型图请补充。
+
+## 📝 其他补充
+可补充任何有助于评估该功能的信息。

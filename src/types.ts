@@ -1,3 +1,5 @@
+import type { Response as OpenAIResponse } from 'openai/resources/responses/responses';
+
 // OpenAI-style message helpers kept for provider adapters
 export interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant' | 'tool' | 'function' | 'developer';
@@ -88,55 +90,17 @@ export interface OpenAIChatRequest {
   store?: boolean;
 }
 
-export interface ProxyResponseContentPart {
-  type: 'output_text' | 'refusal' | string;
-  text?: string;
-  refusal?: string;
-  annotations?: unknown[];
-}
+type OpenAIResponseOutputItem = OpenAIResponse['output'][number];
+type OpenAIMessageOutputItem = Extract<OpenAIResponseOutputItem, { type: 'message' }>;
 
-export interface ProxyResponseOutputItem {
-  id?: string;
-  type: 'message' | 'function_call' | 'reasoning' | string;
-  status?: 'completed' | 'in_progress' | 'incomplete' | 'failed' | string;
-  role?: 'assistant' | 'user' | 'system';
-  content?: ProxyResponseContentPart[];
-  callId?: string;
-  call_id?: string;
-  name?: string;
-  arguments?: string;
-}
+export type ProxyResponseContentPart =
+  OpenAIMessageOutputItem extends { content?: Array<infer Part> } ? Part : never;
 
-export interface ProxyResponseUsage {
-  input_tokens: number;
-  output_tokens: number;
-  total_tokens: number;
-  input_tokens_details?: unknown;
-  output_tokens_details?: unknown;
-}
+export type ProxyResponseOutputItem = OpenAIResponseOutputItem;
 
-export interface ProxyResponse {
-  id: string;
-  object?: 'response' | string;
-  created_at?: number;
-  completed_at?: number;
-  status?: 'completed' | 'in_progress' | 'incomplete' | 'failed' | string;
-  model?: string;
-  output: ProxyResponseOutputItem[];
-  usage?: ProxyResponseUsage;
-  metadata?: Record<string, unknown> | null;
-  instructions?: string | null;
-  previous_response_id?: string | null;
-  parallel_tool_calls?: boolean;
-  temperature?: number | null;
-  top_p?: number | null;
-  tool_choice?: unknown;
-  tools?: unknown[];
-  truncation?: string | null;
-  text?: unknown;
-  store?: boolean;
-  service_tier?: string | null;
-}
+export type ProxyResponseUsage = NonNullable<OpenAIResponse['usage']>;
+
+export type ProxyResponse = OpenAIResponse;
 
 // Provider configuration
 export interface ProviderConfig {

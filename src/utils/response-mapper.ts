@@ -6,7 +6,7 @@ export function createProxyResponse(
   options?: {
     responseId?: string;
     itemId?: string;
-    status?: 'completed' | 'in_progress' | 'failed' | 'incomplete';
+    status?: 'completed' | 'in_progress' | 'incomplete';
     createdAt?: number;
   }
 ): ProxyResponse {
@@ -17,6 +17,12 @@ export function createProxyResponse(
     input_tokens: 0,
     output_tokens: Math.max(content.length, 0),
     total_tokens: Math.max(content.length, 0),
+    input_tokens_details: {
+      cached_tokens: 0,
+    },
+    output_tokens_details: {
+      reasoning_tokens: 0,
+    },
   };
 
   const outputItem: ProxyResponseOutputItem = {
@@ -37,7 +43,9 @@ export function createProxyResponse(
     id: responseId,
     object: 'response',
     created_at: now,
-    completed_at: options?.status === 'completed' ? now : undefined,
+    output_text: content,
+    error: null,
+    incomplete_details: null,
     status: options?.status ?? 'completed',
     model,
     instructions: null,
@@ -50,10 +58,6 @@ export function createProxyResponse(
     top_p: 1,
     tool_choice: 'auto',
     tools: [],
-    truncation: 'disabled',
-    text: { format: { type: 'text' } },
-    store: true,
-    service_tier: 'auto',
   };
 }
 
@@ -127,7 +131,6 @@ export function createResponseStartedChunk(responseId: string, itemId: string | 
   });
   response.output = [];
   delete response.usage;
-  delete response.completed_at;
 
   const createdEvent = {
     type: 'response.created',

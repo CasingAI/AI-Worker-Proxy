@@ -2,7 +2,8 @@ export class ProxyError extends Error {
   constructor(
     message: string,
     public statusCode: number = 500,
-    public code?: string
+    public code?: string,
+    public param?: string
   ) {
     super(message);
     this.name = 'ProxyError';
@@ -11,6 +12,25 @@ export class ProxyError extends Error {
 
 export function createErrorResponse(error: unknown): Response {
   if (error instanceof ProxyError) {
+    if (error.code === 'model_not_found') {
+      return new Response(
+        JSON.stringify({
+          error: {
+            message: error.message,
+            type: 'invalid_request_error',
+            param: error.param ?? 'model',
+            code: 'model_not_found',
+          },
+        }),
+        {
+          status: error.statusCode,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         error: {

@@ -31,19 +31,46 @@ export class Router {
    * Get provider configurations for a given model name
    */
   getProvidersForModel(model: string): ProviderConfig[] {
-    // Check exact match first
-    if (this.routes[model]) {
-      return this.routes[model];
+    const normalizedModel = model.trim();
+
+    // Check exact alias match first
+    if (this.routes[normalizedModel]) {
+      return this.routes[normalizedModel];
     }
 
-    // Default fallback - use first available route or throw error
-    const defaultRoute = Object.values(this.routes)[0];
-    if (defaultRoute) {
-      console.log(`[Router] No configuration found for model "${model}", using default route`);
-      return defaultRoute;
+    // Check alias match ignoring case
+    const caseInsensitiveAliasMatch = this.findRouteByAliasCaseInsensitive(normalizedModel);
+    if (caseInsensitiveAliasMatch) {
+      const [routeName, providers] = caseInsensitiveAliasMatch;
+      console.log(
+        `[Router] Model "${model}" matched route alias "${routeName}" by case-insensitive lookup`
+      );
+      return providers;
     }
 
-    throw new ProxyError(`No providers configured for model: ${model}`, 404);
+    // Check direct provider model match (e.g. request model = provider.model)
+    const providerModelMatch = this.findRouteByProviderModel(normalizedModel);
+    if (providerModelMatch) {
+      const [routeName, providers] = providerModelMatch;
+      console.log(`[Router] Model "${model}" matched provider model under route "${routeName}"`);
+      return providers;
+    }
+
+    // Optional explicit default route
+    const explicitDefaultRoute = this.routes.default ?? this.routes._default;
+    if (explicitDefaultRoute) {
+      console.log(
+        `[Router] No configuration found for model "${model}", using explicit default route`
+      );
+      return explicitDefaultRoute;
+    }
+
+    throw new ProxyError(
+      `The model \`${model}\` does not exist or you do not have access to it.`,
+      404,
+      'model_not_found',
+      'model'
+    );
   }
 
   /**
@@ -110,5 +137,26 @@ export class Router {
       console.error('[Router] Failed to parse ROUTES_CONFIG:', error);
       throw new ProxyError('Invalid ROUTES_CONFIG', 500);
     }
+  }
+
+  private findRouteByAliasCaseInsensitive(model: string): [string, ProviderConfig[]] | null {
+    const target = model.toLowerCase();
+    for (const [routeName, providers] of Object.entries(this.routes)) {
+      if (routeName.toLowerCase() === target) {
+        return [routeName, providers];
+      }
+    }
+    return null;
+  }
+
+  private findRouteByProviderModel(model: string): [string, ProviderConfig[]] | null {
+    const target = model.toLowerCase();
+    for (const [routeName, providers] of Object.entries(this.routes)) {
+      const matched = providers.some((provider) => provider.model.toLowerCase() === target);
+      if (matched) {
+        return [routeName, providers];
+      }
+    }
+    return null;
   }
 }

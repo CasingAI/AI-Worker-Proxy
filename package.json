@@ -1,7 +1,7 @@
 {
   "name": "ai-worker-proxy",
   "version": "1.0.0",
-  "description": "OpenAI-compatible proxy for multiple AI providers on Cloudflare Workers",
+  "description": "OpenAI-compatible proxy for OpenAI and Zhipu GLM on Cloudflare Workers",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
@@ -20,9 +20,6 @@
     "ai",
     "api-gateway",
     "cloudflare-workers",
-    "anthropic",
-    "claude",
-    "gemini",
     "gpt-4",
     "openai-api",
     "ai-proxy",
@@ -31,7 +28,6 @@
     "load-balancer",
     "serverless",
     "edge-computing",
-    "openai-compatible",
     "llm",
     "chatgpt",
     "ai-gateway"
@@ -56,8 +52,6 @@
     "wrangler": "^4.59.1"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
-    "@google/generative-ai": "^0.21.0",
     "openai": "^4.73.0"
   }
 }

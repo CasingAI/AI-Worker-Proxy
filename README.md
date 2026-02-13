@@ -1,11 +1,11 @@
-# 🚀 AI Worker Proxy：各种AI供应商统一转为 Responses API
+# 🚀 AI Worker Proxy：OpenAI + GLM 统一为 Responses API
 
 [![部署到 Cloudflare Workers](https://img.shields.io/badge/Deploy-Cloudflare%20Workers-orange?logo=cloudflare)](https://workers.cloudflare.com/)
 [![兼容 OpenAI](https://img.shields.io/badge/OpenAI-Compatible-green)](https://openai.com/)
 [![MIT 许可](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**还在用 OpenAI 接口发请求，却想接入 Claude、Gemini 等更多模型？**  
-这个项目提供一个部署在 Cloudflare Workers 上的免费 AI 网关：你只需把标准的 OpenAI 请求送过来，网关会按配置把流量路由到 ChatGPT、Claude、Gemini，甚至免费的本地模型，并自动轮换 API Key，保持服务不断线。
+**还在用 OpenAI 接口发请求，却想在 OpenAI 和 GLM 间灵活切换？**  
+这个项目提供一个部署在 Cloudflare Workers 上的免费 AI 网关：你只需把标准的 OpenAI 请求送过来，网关会按配置把流量路由到 OpenAI 或智谱 GLM，并自动轮换 API Key，保持服务不断线。
 
 ---
 
@@ -13,7 +13,7 @@
 
 - **多模型自动切换**：OpenAI 出问题时自动切到其它厂商，保持服务可用。  
 - **多 Key 轮换策略**：配置几组 API Key，接口逐个尝试，消除单点限流。  
-- **统一 API 体验**：同一套代码即可访问 Anthropic、Google、OpenAI 等平台。  
+- **统一 API 体验**：同一套代码即可访问 OpenAI 与智谱 GLM。  
 - **通过 GitHub Variables 静默更新路由**：无需改源码，随时动态调整路由策略。
 
 ---
@@ -44,8 +44,6 @@
 | 变量名 | 示例值 | 说明 |
 |--------|--------|------|
 | `PROXY_AUTH_TOKEN` | `my-secret-password-123` | 访问密码，作为代理的 API Key |
-| `ANTHROPIC_KEY_1` | `sk-ant-xxx...` | Claude API Key |
-| `GOOGLE_KEY_1` | `AIza...` | Google Gemini API Key |
 | `OPENAI_KEY_1` | `sk-proj-...` | OpenAI API Key |
 | `ZHIPU_KEY_1` | `zhipu-sk-xxx...` | 智谱（质谱）AI Key |
 
@@ -66,21 +64,14 @@
 {
   "super-brain": [
     {
-      "provider": "anthropic",
-      "model": "claude-3-opus-20240229",
-      "apiKeys": ["ANTHROPIC_KEY_1"]
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "apiKeys": ["OPENAI_KEY_1"]
     },
     {
-      "provider": "openai",
-      "model": "gpt-4-turbo",
-      "apiKeys": ["OPENAI_KEY_1"]
-    }
-  ],
-  "cheap-fast": [
-    {
-      "provider": "google",
-      "model": "gemini-1.5-flash",
-      "apiKeys": ["GOOGLE_KEY_1"]
+      "provider": "zhipu",
+      "model": "glm-4.7",
+      "apiKeys": ["ZHIPU_KEY_1"]
     }
   ],
   "zhipu-boost": [
@@ -137,4 +128,4 @@ print(response.output_text)
 
 ---
 
-*标签提示：`openai proxy`、`ai gateway`、`api proxy`、`cloudflare workers ai`、`anthropic proxy`、`claude proxy`、`multi provider ai`、`ai load balancer`、`openai compatible api`、`ai failover`、`free ai proxy`、`ai token rotation`、`gpt-4 proxy free`、`smm ai tools`、`bypass ai rate limit`*
+*标签提示：`openai proxy`、`ai gateway`、`api proxy`、`cloudflare workers ai`、`glm proxy`、`zhipu proxy`、`multi provider ai`、`ai load balancer`、`ai failover`、`free ai proxy`、`ai token rotation`、`gpt-4 proxy free`、`smm ai tools`、`bypass ai rate limit`*

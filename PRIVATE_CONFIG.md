@@ -19,11 +19,10 @@
 
 3. Add these secrets:
    - `PROXY_AUTH_TOKEN` = `your-secret-token`
-   - `ANTHROPIC_KEY_1` = `sk-ant-xxxxx`
-   - `GOOGLE_KEY_1` = `AIzaxxxxx`
    - `OPENAI_KEY_1` = `sk-xxxxx`
-   - `NVIDIA_KEY_1` = `nvapi-xxxxx`
-   - `GROQ_KEY_1` = `gsk_xxxxx`
+   - `OPENAI_KEY_2` = `sk-xxxxx`
+   - `ZHIPU_KEY_1` = `zhipu-sk-xxxxx`
+   - `ZHIPU_KEY_2` = `zhipu-sk-xxxxx`
    - etc.
 
 4. Click **"Save and Deploy"**
@@ -41,26 +40,30 @@
 4. Value (JSON, can be formatted):
 ```json
 {
-  "deep-think": [
+  "openai-main": [
     {
-      "provider": "anthropic",
-      "model": "claude-opus-4-20250514",
-      "apiKeys": ["ANTHROPIC_KEY_1", "ANTHROPIC_KEY_2"]
+      "provider": "openai",
+      "model": "gpt-4.1",
+      "apiKeys": ["OPENAI_KEY_1", "OPENAI_KEY_2"]
     }
   ],
-  "fast": [
+  "glm-main": [
     {
-      "provider": "google",
-      "model": "gemini-2.0-flash-exp",
-      "apiKeys": ["GOOGLE_KEY_1"]
+      "provider": "zhipu",
+      "model": "glm-4.7",
+      "apiKeys": ["ZHIPU_KEY_1", "ZHIPU_KEY_2"]
     }
   ],
-  "nvidia": [
+  "fallback-mix": [
     {
-      "provider": "openai-compatible",
-      "baseUrl": "https://integrate.api.nvidia.com/v1",
-      "model": "nvidia/llama-3.1-nemotron-70b-instruct",
-      "apiKeys": ["NVIDIA_KEY_1"]
+      "provider": "zhipu",
+      "model": "glm-4.7-flash",
+      "apiKeys": ["ZHIPU_KEY_1"]
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "apiKeys": ["OPENAI_KEY_1"]
     }
   ]
 }
@@ -111,10 +114,10 @@ Create `.dev.vars` file (DO NOT commit):
 ```bash
 # .dev.vars
 PROXY_AUTH_TOKEN=local-dev-token
-ANTHROPIC_KEY_1=sk-ant-xxxxx
-GOOGLE_KEY_1=AIzaxxxxx
+OPENAI_KEY_1=sk-xxxxx
+ZHIPU_KEY_1=zhipu-sk-xxxxx
 
-ROUTES_CONFIG={"test":[{"provider":"anthropic","model":"claude-opus-4","apiKeys":["ANTHROPIC_KEY_1"]}]}
+ROUTES_CONFIG={"test":[{"provider":"openai","model":"gpt-4.1","apiKeys":["OPENAI_KEY_1"]},{"provider":"zhipu","model":"glm-4.7","apiKeys":["ZHIPU_KEY_1"]}]}
 ```
 
 Run locally:

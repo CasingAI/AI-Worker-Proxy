@@ -1,25 +1,28 @@
-## 📝 Description
-Brief description of changes.
+## 📝 变更说明
+请简要描述本次改动内容。
 
-## 🎯 Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
+## 🎯 与核心职责的一致性
+请说明此 PR 如何增强或保持项目核心职责（OpenAI + Zhipu GLM 的 OpenAI Responses API 兼容能力）。
 
-## ✅ Checklist
-- [ ] Code follows project style
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] Tests added/updated
-- [ ] No breaking changes (or documented)
-- [ ] Tested locally
+## 🎯 变更类型
+- [ ] 缺陷修复
+- [ ] 新功能
+- [ ] 破坏性变更
+- [ ] 文档更新
 
-## 🧪 Testing
-How was this tested?
+## ✅ 自检清单
+- [ ] 代码符合项目风格
+- [ ] 已完成自查
+- [ ] 文档已同步更新
+- [ ] 已新增/更新测试
+- [ ] 不包含破坏性变更（或已在文档中说明）
+- [ ] 已在本地验证
 
-## 📸 Screenshots (if applicable)
-Visual changes.
+## 🧪 测试说明
+请说明你如何验证本次改动。
 
-## 🔗 Related Issues
-Closes #issue_number
+## 📸 截图（如适用）
+如有可视化变化，请附图说明。
+
+## 🔗 关联 Issue
+例如：Closes #issue_number

@@ -1,43 +1,44 @@
-# Private Configuration Guide
+# 私有配置指南
 
-## 🎯 How It Works
+## 🎯 项目主要职责（配置视角）
 
-- **`ROUTES_CONFIG`** → GitHub Variable → injected into wrangler.toml during deploy
-- **Secrets** (PROXY_AUTH_TOKEN, API keys) → Cloudflare Dashboard (manually, persist across deploys)
+- 对外提供 **OpenAI Responses API 兼容入口**
+- 对内在 **OpenAI 与 Zhipu GLM** 之间做路由与故障回退
+- 通过 **ROUTES_CONFIG + Secrets** 持续维护统一调用契约
 
-**Key point:** Cloudflare Secrets are NEVER deleted by wrangler deploy. Set them once in Dashboard, they stay forever.
+## ⚙️ 工作机制
+
+- **`ROUTES_CONFIG`**：存储在 GitHub Variables，部署时注入 `wrangler.toml`
+- **Secrets**（`PROXY_AUTH_TOKEN`、各类 API Key）：存储在 Cloudflare Dashboard，手动维护并可长期保留
+
+**关键点：** Cloudflare Secrets 不会被 `wrangler deploy` 删除。配置一次后可长期复用。
 
 ---
 
-## 📝 Setup Instructions
+## 📝 配置步骤
 
-### Step 1: Add Secrets to Cloudflare Dashboard
+### 第一步：在 Cloudflare Dashboard 添加 Secrets
 
-1. Go to **Cloudflare Dashboard** → **Workers & Pages** → **ai-worker-proxy** → **Settings** → **Variables**
-
-2. Click **"Add variable"** → Select **"Encrypt"** (this makes it a Secret)
-
-3. Add these secrets:
+1. 打开 **Cloudflare Dashboard** → **Workers & Pages** → **ai-worker-proxy** → **Settings** → **Variables**
+2. 点击 **Add variable**，并选择 **Encrypt**（即 Secret）
+3. 添加以下密钥：
    - `PROXY_AUTH_TOKEN` = `your-secret-token`
    - `OPENAI_KEY_1` = `sk-xxxxx`
    - `OPENAI_KEY_2` = `sk-xxxxx`
    - `ZHIPU_KEY_1` = `zhipu-sk-xxxxx`
    - `ZHIPU_KEY_2` = `zhipu-sk-xxxxx`
-   - etc.
+   - 其他按需添加
+4. 点击 **Save and Deploy**
 
-4. Click **"Save and Deploy"**
+**重要：** 这些 Secrets 不会被 GitHub Actions 覆盖或删除。
 
-**IMPORTANT:** These secrets will NEVER be deleted or overwritten by GitHub Actions deployments. Set them once and forget.
+### 第二步：添加 GitHub Variable
 
-### Step 2: Add GitHub Variable
+1. 打开仓库 → **Settings** → **Secrets and variables** → **Actions** → **Variables**
+2. 点击 **New repository variable**
+3. 名称填写：`ROUTES_CONFIG`
+4. 值填写（支持格式化 JSON）：
 
-1. Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **Variables** tab
-
-2. Click **"New repository variable"**
-
-3. Name: `ROUTES_CONFIG`
-
-4. Value (JSON, can be formatted):
 ```json
 {
   "openai-main": [
@@ -69,47 +70,46 @@
 }
 ```
 
-### Step 3: Add GitHub Secrets (for Cloudflare auth)
+### 第三步：添加 GitHub Secrets（用于 Cloudflare 鉴权）
 
-1. Go to **Secrets** tab (next to Variables)
+1. 打开 **Secrets** 标签（与 Variables 同级）
+2. 添加以下内容：
+   - `CLOUDFLARE_API_TOKEN`：Cloudflare API Token
+   - `CLOUDFLARE_ACCOUNT_ID`：Cloudflare Account ID
 
-2. Add these:
-   - `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token
-   - `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
-
-### Step 4: Deploy
+### 第四步：触发部署
 
 ```bash
 git push origin main
 ```
 
-GitHub Actions will:
-1. Replace `ROUTES_CONFIG` in wrangler.toml with your GitHub Variable
-2. Deploy to Cloudflare
-3. Your Dashboard secrets remain untouched
+GitHub Actions 会自动：
+1. 用 GitHub Variable 覆盖 `wrangler.toml` 中的 `ROUTES_CONFIG`
+2. 执行 Cloudflare 部署
+3. 保留 Cloudflare Dashboard 中已有的 Secrets
 
 ---
 
-## 🔄 Updating Configuration
+## 🔄 配置更新方法
 
-### Update Routes (ROUTES_CONFIG)
+### 更新路由（ROUTES_CONFIG）
 
-1. Edit the variable in GitHub: Settings → Secrets and variables → Actions → **Variables** → ROUTES_CONFIG
-2. Push any commit to main (or manually re-run workflow)
-3. Done! New routes deployed.
+1. 在 GitHub 修改 `ROUTES_CONFIG` 变量
+2. 推送任意 commit 到 `main`（或手动重跑 workflow）
+3. 新路由自动生效
 
-### Update Secrets (API Keys, Auth Token)
+### 更新密钥（API Key / Auth Token）
 
-1. Go to **Cloudflare Dashboard** → Workers & Pages → ai-worker-proxy → Settings → Variables
-2. Edit the encrypted variable
-3. Click "Save and Deploy"
-4. Done! (No need to push anything)
+1. 打开 Cloudflare Dashboard → Workers & Pages → ai-worker-proxy → Settings → Variables
+2. 编辑对应的加密变量
+3. 点击 **Save and Deploy**
+4. 无需推送代码
 
 ---
 
-## 🏠 Local Development
+## 🏠 本地开发
 
-Create `.dev.vars` file (DO NOT commit):
+新建 `.dev.vars`（不要提交到仓库）：
 
 ```bash
 # .dev.vars
@@ -120,79 +120,79 @@ ZHIPU_KEY_1=zhipu-sk-xxxxx
 ROUTES_CONFIG={"test":[{"provider":"openai","model":"gpt-4.1","apiKeys":["OPENAI_KEY_1"]},{"provider":"zhipu","model":"glm-4.7","apiKeys":["ZHIPU_KEY_1"]}]}
 ```
 
-Run locally:
+本地启动：
+
 ```bash
 npm run dev
 ```
 
-Wrangler will automatically load variables from `.dev.vars`.
+Wrangler 会自动读取 `.dev.vars`。
 
 ---
 
-## 🆘 Troubleshooting
+## 🆘 故障排查
 
-### GitHub Actions fails with "vars.ROUTES_CONFIG not found"
+### GitHub Actions 报错：`vars.ROUTES_CONFIG not found`
 
-**Solution:**
-1. Make sure you added `ROUTES_CONFIG` as a **Variable** (not Secret)
-2. Go to Settings → Secrets and variables → Actions → **Variables** tab
-3. Variables and Secrets are in different tabs!
+**解决方式：**
+1. 确认 `ROUTES_CONFIG` 添加在 **Variables**（不是 Secrets）
+2. 打开 Settings → Secrets and variables → Actions → **Variables**
+3. 注意 Variables 与 Secrets 是不同标签页
 
-### Worker can't authenticate / missing API keys
+### Worker 鉴权失败 / 缺少 API Key
 
-**Solution:**
-1. Check secrets are set in **Cloudflare Dashboard** (not GitHub)
-2. Go to Cloudflare Dashboard → Workers & Pages → ai-worker-proxy → Settings → Variables
-3. Make sure secrets are marked as "Encrypted"
-4. Click "Save and Deploy" after adding/editing
+**解决方式：**
+1. 确认密钥配置在 **Cloudflare Dashboard**（不是 GitHub）
+2. 路径：Workers & Pages → ai-worker-proxy → Settings → Variables
+3. 确认变量为加密状态（Encrypted）
+4. 编辑后点击 **Save and Deploy**
 
-### ROUTES_CONFIG is not updating after push
+### Push 后 ROUTES_CONFIG 没有更新
 
-**Solution:**
-1. Check GitHub Actions logs - did the workflow run?
-2. Check if GitHub Variable `ROUTES_CONFIG` is set correctly
-3. Make sure the JSON is valid (use a JSON validator)
-4. Check the workflow replaced the [vars] section (look at logs)
+**解决方式：**
+1. 查看 GitHub Actions 日志，确认 workflow 是否执行
+2. 检查 GitHub Variable `ROUTES_CONFIG` 是否正确
+3. 确认 JSON 合法（可用 JSON 校验工具）
+4. 在日志里确认 workflow 是否替换了 `[vars]` 段
 
-### Want to add a new API provider
+### 想新增路由能力
 
-**Solution:**
-1. Add the API key to **Cloudflare Dashboard** as encrypted variable (e.g., `DEEPSEEK_KEY_1`)
-2. Update GitHub Variable `ROUTES_CONFIG` to include the new route
-3. Push to trigger deployment
-
----
-
-## 📋 Checklist
-
-- [ ] All secrets added to **Cloudflare Dashboard** (encrypted variables)
-- [ ] `ROUTES_CONFIG` added as **GitHub Variable**
-- [ ] `CLOUDFLARE_API_TOKEN` added as GitHub Secret
-- [ ] `CLOUDFLARE_ACCOUNT_ID` added as GitHub Secret
-- [ ] `.dev.vars` created for local development (not committed)
-- [ ] Pushed to main and verified deployment succeeded
+**说明：**
+当前项目默认聚焦 OpenAI 与 Zhipu GLM。  
+若要新增其他供应商，需要先修改代码中的 provider 类型与适配层，再更新配置。
 
 ---
 
-## 📖 Why This Works
+## 📋 自检清单
 
-**The Problem:**
-- Wrangler ALWAYS overwrites vars defined in wrangler.toml [vars] section
-- But Cloudflare Secrets are NEVER deleted by wrangler deploy
-
-**The Solution:**
-- `ROUTES_CONFIG` goes in [vars] → GitHub Actions replaces it before deploy
-- Sensitive data (tokens, API keys) goes in Cloudflare Secrets → never touched
-
-**Result:**
-- Public repo stays clean (example config only)
-- ROUTES_CONFIG easily updated via GitHub Variable
-- Secrets stay secure in Cloudflare Dashboard
-- No accidental overwrites
+- [ ] 已在 Cloudflare Dashboard 添加全部 Secrets（加密变量）
+- [ ] 已在 GitHub Variables 配置 `ROUTES_CONFIG`
+- [ ] 已在 GitHub Secrets 配置 `CLOUDFLARE_API_TOKEN`
+- [ ] 已在 GitHub Secrets 配置 `CLOUDFLARE_ACCOUNT_ID`
+- [ ] 已创建本地 `.dev.vars`（且未提交）
+- [ ] 已推送到 `main` 并验证部署成功
 
 ---
 
-## 📚 References
+## 📖 为什么这样设计
+
+**问题：**
+- Wrangler 会覆盖 `wrangler.toml [vars]` 中定义的变量
+- 但 Cloudflare Secrets 不会被 `wrangler deploy` 删除
+
+**方案：**
+- 把 `ROUTES_CONFIG` 放在 `[vars]`，由 GitHub Actions 在部署前动态替换
+- 把敏感信息（token、API Key）放在 Cloudflare Secrets
+
+**结果：**
+- 公共仓库保持干净（仅保留示例配置）
+- ROUTES_CONFIG 可以快速在 GitHub 侧更新
+- Secrets 留在 Cloudflare，安全性更高
+- 降低误覆盖风险
+
+---
+
+## 📚 参考资料
 
 - [Cloudflare Secrets Documentation](https://developers.cloudflare.com/workers/configuration/secrets/)
 - [GitHub Actions Variables](https://docs.github.com/en/actions/learn-github-actions/variables)

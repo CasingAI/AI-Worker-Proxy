@@ -1,39 +1,42 @@
 ---
-name: Bug Report
-about: Create a report to help us improve
+name: 缺陷报告
+about: 提交问题报告以帮助我们改进
 title: '[BUG] '
 labels: bug
 assignees: 'zxcloli666'
 ---
 
-## 🐛 Bug Description
-A clear description of what the bug is.
+## 🐛 问题描述
+请清晰描述遇到的问题现象。
 
-## 📋 Steps to Reproduce
-1. Go to '...'
-2. Configure '...'
-3. Run '...'
-4. See error
+## 🎯 对核心职责的影响
+这个问题是否破坏了项目核心职责（OpenAI + Zhipu GLM 的 OpenAI Responses API 兼容能力）？如果是，请说明影响方式。
 
-## ✅ Expected Behavior
-What you expected to happen.
+## 📋 复现步骤
+1. 进入 `...`
+2. 配置 `...`
+3. 执行 `...`
+4. 看到报错
 
-## ❌ Actual Behavior
-What actually happened.
+## ✅ 期望行为
+请描述你预期发生的结果。
 
-## 📸 Screenshots
-If applicable, add screenshots.
+## ❌ 实际行为
+请描述实际发生的结果。
 
-## 🔧 Environment
-- OS: [e.g. macOS, Windows, Linux]
-- Node.js version: [e.g. 18.0.0]
-- npm version: [e.g. 9.0.0]
-- Cloudflare Workers environment: [local / production]
+## 📸 截图
+如适用，请附上截图。
 
-## 📝 Error Logs
+## 🔧 环境信息
+- 操作系统：如 macOS / Windows / Linux
+- Node.js 版本：如 18.0.0
+- npm 版本：如 9.0.0
+- Cloudflare Workers 环境：`local` / `production`
+
+## 📝 错误日志
 ```
-Paste error logs here
+请粘贴错误日志
 ```
 
-## 🔗 Additional Context
-Any other context about the problem.
+## 🔗 其他补充
+可填写任何有助于定位问题的上下文信息。

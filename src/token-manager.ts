@@ -15,9 +15,21 @@ export class TokenManager {
   async executeWithRotation(request: OpenAIChatRequest): Promise<ProviderResponse> {
     const provider = createProvider(this.config, this.env);
     const apiKeys = this.getApiKeys();
+    const configuredApiKeys = Array.isArray(this.config.apiKeys) ? this.config.apiKeys : [];
 
     if (apiKeys.length === 0) {
-      // For providers that don't need API keys (like Cloudflare AI)
+      if (configuredApiKeys.length > 0) {
+        const missingEnvVars = configuredApiKeys.join(', ');
+        const errorMessage = `No API keys available for ${this.config.provider}/${this.config.model}. Missing env vars: ${missingEnvVars}`;
+        console.error(`[TokenManager] ${errorMessage}`);
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: 500,
+        };
+      }
+
+      // For providers that don't need API keys
       return await provider.chat(request, '');
     }
 

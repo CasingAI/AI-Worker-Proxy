@@ -1,113 +1,57 @@
+import type { Response as OpenAIResponse, ResponseStreamEvent as OpenAIResponseStreamEvent } from 'openai/resources/responses/responses';
+
 /**
- * 服务器侧 Responses API（标准接口）事件定义。
- * 注意：这是服务端原始 SSE 事件，不是 SDK 内部转换后的事件名。
+ * 基于 OpenAI 官方 Responses 类型导出的服务端 SSE 事件类型。
+ * 说明：保持当前导出名不变，便于项目内外继续按既有命名使用。
  */
 
-export interface ResponseUsage {
-  input_tokens: number;
-  output_tokens: number;
-  total_tokens: number;
-  input_tokens_details?: Record<string, number>;
-  output_tokens_details?: Record<string, number>;
-}
+type OpenAIResponseOutputItem = OpenAIResponse['output'][number];
 
-export interface ResponseContentPart {
-  type: 'output_text' | 'refusal' | string;
-  text?: string;
-  refusal?: string;
-  annotations?: unknown[];
-  [key: string]: unknown;
-}
+type OpenAIMessageOutputItem = Extract<OpenAIResponseOutputItem, { type: 'message' }>;
 
-export interface ResponseOutputItem {
-  id: string;
-  type: 'message' | 'function_call' | 'reasoning' | string;
-  role?: 'assistant' | 'user' | 'system';
-  status?: 'in_progress' | 'completed' | 'incomplete' | 'failed';
-  content?: ResponseContentPart[];
-  [key: string]: unknown;
-}
+export type ResponseUsage = NonNullable<OpenAIResponse['usage']>;
 
-export interface ResponseObject {
-  id: string;
-  object: 'response';
-  created_at: number;
-  completed_at?: number;
-  status: 'in_progress' | 'completed' | 'incomplete' | 'failed';
-  model: string;
-  output: ResponseOutputItem[];
-  usage?: ResponseUsage;
-  metadata?: Record<string, unknown> | null;
-  instructions?: string | null;
-  previous_response_id?: string | null;
-  [key: string]: unknown;
-}
+export type ResponseContentPart =
+  OpenAIMessageOutputItem extends { content?: Array<infer Part> } ? Part : never;
 
-export interface ResponseCreatedEvent {
-  type: 'response.created';
-  response: ResponseObject;
-}
+export type ResponseOutputItem = OpenAIResponseOutputItem;
 
-export interface ResponseOutputItemAddedEvent {
-  type: 'response.output_item.added';
-  output_index: number;
-  item: ResponseOutputItem;
-}
+export type ResponseObject = OpenAIResponse;
 
-export interface ResponseOutputTextDeltaEvent {
-  type: 'response.output_text.delta';
-  item_id: string;
-  output_index: number;
-  content_index: number;
-  delta: string;
-}
+export type ResponseCreatedEvent = Extract<OpenAIResponseStreamEvent, { type: 'response.created' }>;
 
-export interface ResponseOutputTextDoneEvent {
-  type: 'response.output_text.done';
-  item_id: string;
-  output_index: number;
-  content_index: number;
-  text: string;
-}
+export type ResponseOutputItemAddedEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.output_item.added' }
+>;
 
-export interface ResponseFunctionCallArgumentsDeltaEvent {
-  type: 'response.function_call_arguments.delta';
-  item_id: string;
-  output_index: number;
-  delta: string;
-}
+export type ResponseOutputTextDeltaEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.output_text.delta' }
+>;
 
-export interface ResponseFunctionCallArgumentsDoneEvent {
-  type: 'response.function_call_arguments.done';
-  item_id: string;
-  output_index: number;
-  arguments: string;
-}
+export type ResponseOutputTextDoneEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.output_text.done' }
+>;
 
-export interface ResponseOutputItemDoneEvent {
-  type: 'response.output_item.done';
-  output_index: number;
-  item: ResponseOutputItem;
-}
+export type ResponseFunctionCallArgumentsDeltaEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.function_call_arguments.delta' }
+>;
 
-export interface ResponseCompletedEvent {
-  type: 'response.completed';
-  response: ResponseObject;
-}
+export type ResponseFunctionCallArgumentsDoneEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.function_call_arguments.done' }
+>;
 
-export interface ResponseFailedEvent {
-  type: 'response.failed';
-  response: ResponseObject;
-}
+export type ResponseOutputItemDoneEvent = Extract<
+  OpenAIResponseStreamEvent,
+  { type: 'response.output_item.done' }
+>;
 
-export type ResponseStreamEvent =
-  | ResponseCreatedEvent
-  | ResponseOutputItemAddedEvent
-  | ResponseOutputTextDeltaEvent
-  | ResponseOutputTextDoneEvent
-  | ResponseFunctionCallArgumentsDeltaEvent
-  | ResponseFunctionCallArgumentsDoneEvent
-  | ResponseOutputItemDoneEvent
-  | ResponseCompletedEvent
-  | ResponseFailedEvent
-  | { type: string; [key: string]: unknown };
+export type ResponseCompletedEvent = Extract<OpenAIResponseStreamEvent, { type: 'response.completed' }>;
+
+export type ResponseFailedEvent = Extract<OpenAIResponseStreamEvent, { type: 'response.failed' }>;
+
+export type ResponseStreamEvent = OpenAIResponseStreamEvent;

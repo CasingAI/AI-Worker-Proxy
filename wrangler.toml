@@ -23,7 +23,7 @@ persist = false
 ROUTES_CONFIG = '''
 {
   "zhipu-flash-latest": {
-    "displayName": "GLM-4.7 FlashX",
+    "displayName": "GLM 4.7 Flash X",
     "providers": [
       {
         "provider": "zhipu",

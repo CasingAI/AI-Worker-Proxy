@@ -9,7 +9,7 @@ export function createProvider(config: ProviderConfig, _env: Env): AIProvider {
       return new OpenAIProvider(config.model);
 
     case 'zhipu':
-      return new ZhipuProvider(config.model, config.baseUrl);
+      return new ZhipuProvider(config.model, config.endpoint ?? config.baseUrl);
 
     default:
       throw new Error(`Unknown provider: ${config.provider}`);

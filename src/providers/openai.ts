@@ -9,7 +9,7 @@ export class OpenAIProvider extends BaseProvider {
     try {
       const client = new OpenAI({
         apiKey,
-        baseURL: this.baseUrl,
+        baseURL: this.endpoint,
       });
 
       const baseParams: Omit<OpenAI.Responses.ResponseCreateParams, 'stream'> = {

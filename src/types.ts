@@ -107,7 +107,8 @@ export interface ProviderConfig {
   provider: 'openai' | 'zhipu';
   model: string;
   apiKeys: string[]; // Array of env var names
-  baseUrl?: string; // Optional custom base URL (primarily for zhipu)
+  endpoint?: string; // Preferred custom endpoint (primarily for zhipu)
+  baseUrl?: string; // Legacy custom base URL (kept for older configs)
   contextWindow?: number;
   maxInputTokens?: number;
   maxOutputTokens?: number;
@@ -124,6 +125,14 @@ export interface RouteEntry {
   metadata?: Record<string, unknown>;
   flags?: string[];
   displayName?: string;
+  description?: string;
+  contextWindow?: number;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
+  pricingCurrency?: string;
+  inputPricePer1m?: number;
+  inputCachePricePer1m?: number;
+  outputPricePer1m?: number;
 }
 
 export interface RouteConfig {

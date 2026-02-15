@@ -24,14 +24,15 @@ ROUTES_CONFIG = '''
 {
   "zhipu-flash-latest": {
     "displayName": "GLM 4.7 Flash X",
+    "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
     "providers": [
       {
         "provider": "zhipu",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
-        "contextWindow": 200000,
-        "maxOutputTokens": 16384,
-        "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
+        "endpoint": "https://api.z.ai/api/paas/v4/",
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
@@ -40,18 +41,20 @@ ROUTES_CONFIG = '''
     ],
     "metadata": {
       "tier": "free"
-    }
+    },
+    "flags": []
   },
   "glm-4.6v-flash": {
     "displayName": "GLM 4.6V Flash",
+    "description": "智谱提供的 12B 多模态模型，视觉理解精度上达到同参数规模 SOTA",
+    "contextWindow": 128000,
+    "maxOutputTokens": 0,
     "providers": [
       {
         "provider": "zhipu",
         "model": "glm-4.6v-flash",
-        "apiKeys": ["ZHIPU_KEY_1"],
-        "contextWindow": 128000,
-        "maxOutputTokens": 0,
-        "description": "智谱提供的 12B 多模态模型，视觉理解精度上达到同参数规模 SOTA",
+        "apiKeys": ["ZHIPU_CN_KEY"],
+        "endpoint": "https://open.bigmodel.cn/api/paas/v4",
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.3,
         "inputCachePricePer1m": 0.03,

@@ -31,15 +31,15 @@ interface FunctionCallState {
 }
 
 export class ZhipuProvider extends BaseProvider {
-  constructor(model: string, baseUrl?: string) {
-    super(model, baseUrl ?? DEFAULT_BASE_URL);
+  constructor(model: string, endpoint?: string) {
+    super(model, endpoint ?? DEFAULT_BASE_URL);
   }
 
   async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
     try {
       const client = new OpenAI({
         apiKey,
-        baseURL: this.baseUrl,
+        baseURL: this.endpoint,
       });
 
       const messages = this.buildMessages(request);

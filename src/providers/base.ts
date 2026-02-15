@@ -13,7 +13,7 @@ export interface AIProvider {
 export abstract class BaseProvider implements AIProvider {
   constructor(
     protected model: string,
-    protected baseUrl?: string
+    protected endpoint?: string
   ) {}
 
   abstract chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse>;

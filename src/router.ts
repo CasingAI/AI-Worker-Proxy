@@ -33,24 +33,37 @@ export class Router {
   }> {
     return Object.entries(this.routes).map(([routeName, entry]) => {
       const provider = entry.providers[0];
-      const pricing = provider
-        ? {
-            currency: provider.pricingCurrency,
-            input_per_1m: provider.inputPricePer1m,
-            input_cache_per_1m: provider.inputCachePricePer1m,
-            output_per_1m: provider.outputPricePer1m,
-          }
-        : undefined;
+      const pricingCurrency = entry.pricingCurrency ?? provider?.pricingCurrency;
+      const inputPricePer1m = entry.inputPricePer1m ?? provider?.inputPricePer1m;
+      const inputCachePricePer1m = entry.inputCachePricePer1m ?? provider?.inputCachePricePer1m;
+      const outputPricePer1m = entry.outputPricePer1m ?? provider?.outputPricePer1m;
+      const pricing =
+        pricingCurrency || inputPricePer1m || inputCachePricePer1m || outputPricePer1m
+          ? {
+              currency: pricingCurrency,
+              input_per_1m: inputPricePer1m,
+              input_cache_per_1m: inputCachePricePer1m,
+              output_per_1m: outputPricePer1m,
+            }
+          : undefined;
+      const contextLength =
+        entry.contextWindow ??
+        entry.maxInputTokens ??
+        provider?.contextWindow ??
+        provider?.maxInputTokens;
+      const maxInputTokens = entry.maxInputTokens ?? provider?.maxInputTokens;
+      const maxOutputTokens = entry.maxOutputTokens ?? provider?.maxOutputTokens;
+      const description = entry.description ?? provider?.description;
 
       return {
         id: routeName,
         object: 'model',
         owned_by: 'ai-worker-proxy',
         permission: [],
-        description: provider?.description,
-        context_length: provider?.contextWindow ?? provider?.maxInputTokens,
-        max_input_tokens: provider?.maxInputTokens,
-        max_output_tokens: provider?.maxOutputTokens,
+        description,
+        context_length: contextLength,
+        max_input_tokens: maxInputTokens,
+        max_output_tokens: maxOutputTokens,
         pricing,
         metadata: entry.metadata,
         flags: entry.flags,

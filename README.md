@@ -71,53 +71,74 @@
 
 ```json
 {
-  "super-brain": [
-    {
-      "provider": "openai",
-      "model": "gpt-4.1",
-      "apiKeys": ["OPENAI_KEY_1"]
-    },
-    {
-      "provider": "zhipu",
-      "model": "glm-4.7",
-      "apiKeys": ["ZHIPU_KEY_1"]
-    }
-  ],
-  "zhipu-boost": [
-    {
-      "provider": "zhipu",
-      "model": "glm-4.7",
-      "apiKeys": ["ZHIPU_KEY_1"]
-    }
-  ]
+  "super-brain": {
+    "displayName": "Super Brain",
+    "description": "OpenAI + 智谱多厂商弹性路由，优先走 GPT-4.1，失败后 fallback 到智谱 GLM-4.7。",
+    "contextWindow": 8192,
+    "maxOutputTokens": 2048,
+    "flags": ["general"],
+    "providers": [
+      {
+        "provider": "openai",
+        "model": "gpt-4.1",
+        "apiKeys": ["OPENAI_KEY_1"]
+      },
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "endpoint": "https://api.z.ai/api/paas/v4/"
+      }
+    ]
+  },
+  "zhipu-boost": {
+    "displayName": "GLM-4.7 Boost",
+    "description": "仅走智谱 GLM-4.7，支持多个 endpoint 轮转。",
+    "contextWindow": 65536,
+    "providers": [
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "endpoint": "https://your-custom-endpoint.example.com/api/paas/v4/"
+      },
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7",
+        "apiKeys": ["ZHIPU_KEY_2"],
+        "endpoint": "https://backup-endpoint.example.com/api/paas/v4/"
+      }
+    ]
+  }
 }
 ```
 
 ### 🧠 模型元数据（可选）
 
-每个 route 内的 provider 配置现在可以附加一些可选字段，代理会在 `GET /models` 与 `/v1/models` 返回的模型对象中同步这些能力信息，便于上层围绕上下文长度、定价或自定义标签做展示（旧格式仍然兼容）：
+每个 route entry 都可以携带一些能力元数据，这些字段会直接出现在 `GET /models` 与 `/v1/models` 的返回值里（旧格式中在 provider 层级定义的字段仍然兼容，只是优先使用 route entry 的值）：
 
+- `description`：可读说明，`/models` 返回的对象会带上这段文字。
 - `contextWindow` / `maxInputTokens` / `maxOutputTokens`：描述上下文与输出限制，代理会把它们映射为 OpenAI 兼容字段 `context_length`、`max_input_tokens`、`max_output_tokens`。
-- `description`：可以填写可读说明，`/models` 中会包含这段文字。
 - `pricingCurrency`、`inputPricePer1m`、`inputCachePricePer1m`、`outputPricePer1m`：定义计费，代理会把这些值归集到响应的 `pricing` 结构里。
-- `metadata`：任意键值对会被原样放进 `/models` 返回的 `metadata` 字段，适合给前端传额外标签或特性。
+- `metadata`：任意键值对会原样出现在 `/models` 的 `metadata` 字段中，适合传额外标签或特性。
 - `flags`：字符串数组，直接出现在 `/models` 返回的数据里，用来列举此路由的能力标签（例如 `glm-4.6v-flash` 配置了 `["image"]`，表示具备图像理解能力）。
 
-每个 route entry 本身也可以提供一个 `displayName`，这样 `/models` 返回的对象会带上这个友好名称，方便展示，而不是只能看到 ID。
+每个 route entry 也可以提供 `displayName`，这样 `/models` 中展示的是更友好的名称而不是 ID。
 
 例如：  
 ```json
 {
   "zhipu-flash-latest": {
     "displayName": "GLM-4.7 FlashX",
+    "description": "GLM-4.7-Flash（FlashX 计费），原生支持 Cache 套餐",
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
     "providers": [
       {
         "provider": "zhipu",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
-        "contextWindow": 200000,
-        "maxOutputTokens": 16384,
-        "description": "GLM-4.7-Flash（FlashX 计费）",
+        "endpoint": "https://api.z.ai/api/paas/v4/",
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,

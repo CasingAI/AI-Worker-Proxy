@@ -60,7 +60,8 @@ ROUTES_CONFIG = '''
     ],
     "metadata": {
       "tier": "free"
-    }
+    },
+    "flags": ["image"]
   }
 }
 '''

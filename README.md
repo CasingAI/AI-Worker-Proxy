@@ -101,6 +101,7 @@
 - `description`：可以填写可读说明，`/models` 中会包含这段文字。
 - `pricingCurrency`、`inputPricePer1m`、`inputCachePricePer1m`、`outputPricePer1m`：定义计费，代理会把这些值归集到响应的 `pricing` 结构里。
 - `metadata`：任意键值对会被原样放进 `/models` 返回的 `metadata` 字段，适合给前端传额外标签或特性。
+- `flags`：字符串数组，直接出现在 `/models` 返回的数据里，用来列举此路由的能力标签（例如 `glm-4.6v-flash` 配置了 `["image"]`，表示具备图像理解能力）。
 
 每个 route entry 本身也可以提供一个 `displayName`，这样 `/models` 返回的对象会带上这个友好名称，方便展示，而不是只能看到 ID。
 
@@ -126,7 +127,8 @@
     "metadata": {
       "flash_version": "FlashX",
       "tier": "flash"
-    }
+    },
+    "flags": ["flash"]
   }
 }
 ```

@@ -122,6 +122,7 @@ export interface ProviderConfig {
 export interface RouteEntry {
   providers: ProviderConfig[];
   metadata?: Record<string, unknown>;
+  flags?: string[];
   displayName?: string;
 }
 

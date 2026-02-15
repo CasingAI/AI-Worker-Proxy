@@ -29,6 +29,7 @@ export class Router {
       output_per_1m?: number;
     };
     metadata?: Record<string, unknown>;
+    flags?: string[];
   }> {
     return Object.entries(this.routes).map(([routeName, entry]) => {
       const provider = entry.providers[0];
@@ -52,6 +53,7 @@ export class Router {
         max_output_tokens: provider?.maxOutputTokens,
         pricing,
         metadata: entry.metadata,
+        flags: entry.flags,
         display_name: entry.displayName ?? routeName,
       };
     });

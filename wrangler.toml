@@ -22,39 +22,26 @@ persist = false
 # Model routing configuration (example - will be replaced by GitHub Actions)
 ROUTES_CONFIG = '''
 {
-  "openai-main": [
-    {
-      "provider": "openai",
-      "model": "gpt-4.1",
-      "apiKeys": ["OPENAI_KEY_1", "OPENAI_KEY_2"]
+  "zhipu-flash-latest": {
+    "providers": [
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7-flash",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "context_window": 200000,
+        "max_output_tokens": 16384,
+        "description": "GLM-4.7-Flash（FlashX 定价）",
+        "pricing_currency": "cny",
+        "input_price_per_1m": 0.5,
+        "input_cache_price_per_1m": 0.1,
+        "output_price_per_1m": 3
+      }
+    ],
+    "metadata": {
+      "flash_version": "FlashX",
+      "tier": "flash"
     }
-  ],
-  "glm-main": [
-    {
-      "provider": "zhipu",
-      "model": "glm-4.7-flash",
-      "apiKeys": ["ZHIPU_KEY_1"]
-    }
-  ],
-  "zhipu-flash-latest": [
-    {
-      "provider": "zhipu",
-      "model": "glm-4.7-flash",
-      "apiKeys": ["ZHIPU_KEY_1"]
-    }
-  ],
-  "fallback-mix": [
-    {
-      "provider": "zhipu",
-      "model": "glm-4.7",
-      "apiKeys": ["ZHIPU_KEY_1"]
-    },
-    {
-      "provider": "openai",
-      "model": "gpt-4.1-mini",
-      "apiKeys": ["OPENAI_KEY_1"]
-    }
-  ]
+  }
 }
 '''
 PROXY_AUTH_TOKEN = "testGiuyghi"

@@ -1,6 +1,12 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse, ProxyResponseOutputItem, Tool } from '../types';
+import {
+  OpenAIChatRequest,
+  ProviderResponse,
+  ProxyResponseOutputItem,
+  ProxyResponseUsage,
+  Tool,
+} from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-normalizer';
@@ -76,7 +82,10 @@ export class ZhipuProvider extends BaseProvider {
     const response = await client.chat.completions.create(params);
     const message = response.choices?.[0]?.message;
     const content = this.extractAssistantMessage(message);
-    const proxyResponse = createProxyResponse(content, this.model);
+    const usage = response.usage as ProxyResponseUsage | undefined;
+    const proxyResponse = createProxyResponse(content, this.model, {
+      ...(usage ? { usage } : {}),
+    });
     const toolCalls = message?.tool_calls ?? [];
 
     if (!content && toolCalls.length > 0) {
@@ -97,6 +106,7 @@ export class ZhipuProvider extends BaseProvider {
     const stream = await client.chat.completions.create(params);
     const { responseId, itemId } = createStreamIds();
 
+    let lastUsage: ProxyResponseUsage | undefined;
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
     const encoder = new TextEncoder();
@@ -114,6 +124,10 @@ export class ZhipuProvider extends BaseProvider {
           let emittedForChunk = false;
           const content = chunk.choices?.[0]?.delta?.content;
           const deltaText = typeof content === 'string' ? content : '';
+          const chunkUsage = (chunk as { usage?: ProxyResponseUsage }).usage;
+          if (chunkUsage) {
+            lastUsage = chunkUsage;
+          }
           const toolCallDeltas = parseToolCallDeltas(chunk.choices?.[0]?.delta?.tool_calls);
 
           if (deltaText) {
@@ -181,6 +195,7 @@ export class ZhipuProvider extends BaseProvider {
           outputText: fullText,
           rawEvent: lastRawEvent,
           additionalOutputItems,
+          usage: lastUsage,
         });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));

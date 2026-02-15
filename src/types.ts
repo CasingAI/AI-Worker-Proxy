@@ -108,10 +108,24 @@ export interface ProviderConfig {
   model: string;
   apiKeys: string[]; // Array of env var names
   baseUrl?: string; // Optional custom base URL (primarily for zhipu)
+  context_window?: number;
+  max_input_tokens?: number;
+  max_output_tokens?: number;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  pricing_currency?: string;
+  input_price_per_1m?: number;
+  input_cache_price_per_1m?: number;
+  output_price_per_1m?: number;
+}
+
+export interface RouteEntry {
+  providers: ProviderConfig[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface RouteConfig {
-  [route: string]: ProviderConfig[];
+  [route: string]: RouteEntry;
 }
 
 // Environment bindings

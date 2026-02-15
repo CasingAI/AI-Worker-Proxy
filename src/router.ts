@@ -17,14 +17,42 @@ export class Router {
     object: string;
     owned_by: string;
     permission: string[];
+    description?: string;
+    context_length?: number;
+    max_input_tokens?: number;
+    max_output_tokens?: number;
+    pricing?: {
+      currency?: string;
+      input_per_1m?: number;
+      input_cache_per_1m?: number;
+      output_per_1m?: number;
+    };
+    metadata?: Record<string, unknown>;
   }> {
-    const models = Object.keys(this.routes);
-    return models.map((model) => ({
-      id: model,
-      object: 'model',
-      owned_by: 'ai-worker-proxy',
-      permission: [],
-    }));
+    return Object.entries(this.routes).map(([routeName, entry]) => {
+      const provider = entry.providers[0];
+      const pricing = provider
+        ? {
+            currency: provider.pricing_currency,
+            input_per_1m: provider.input_price_per_1m,
+            input_cache_per_1m: provider.input_cache_price_per_1m,
+            output_per_1m: provider.output_price_per_1m,
+          }
+        : undefined;
+
+      return {
+        id: routeName,
+        object: 'model',
+        owned_by: 'ai-worker-proxy',
+        permission: [],
+        description: provider?.description,
+        context_length: provider?.context_window ?? provider?.max_input_tokens,
+        max_input_tokens: provider?.max_input_tokens,
+        max_output_tokens: provider?.max_output_tokens,
+        pricing,
+        metadata: entry.metadata,
+      };
+    });
   }
 
   /**
@@ -35,7 +63,7 @@ export class Router {
 
     // Check exact alias match first
     if (this.routes[normalizedModel]) {
-      return this.routes[normalizedModel];
+      return this.routes[normalizedModel].providers;
     }
 
     // Check alias match ignoring case
@@ -62,7 +90,7 @@ export class Router {
       console.log(
         `[Router] No configuration found for model "${model}", using explicit default route`
       );
-      return explicitDefaultRoute;
+      return explicitDefaultRoute.providers;
     }
 
     throw new ProxyError(
@@ -130,7 +158,7 @@ export class Router {
         throw new Error('ROUTES_CONFIG not found in environment');
       }
 
-      const config = JSON.parse(configStr);
+      const config = JSON.parse(configStr) as RouteConfig;
       console.log('[Router] Loaded routes:', Object.keys(config));
       return config;
     } catch (error) {
@@ -141,9 +169,9 @@ export class Router {
 
   private findRouteByAliasCaseInsensitive(model: string): [string, ProviderConfig[]] | null {
     const target = model.toLowerCase();
-    for (const [routeName, providers] of Object.entries(this.routes)) {
+    for (const [routeName, entry] of Object.entries(this.routes)) {
       if (routeName.toLowerCase() === target) {
-        return [routeName, providers];
+        return [routeName, entry.providers];
       }
     }
     return null;
@@ -151,10 +179,10 @@ export class Router {
 
   private findRouteByProviderModel(model: string): [string, ProviderConfig[]] | null {
     const target = model.toLowerCase();
-    for (const [routeName, providers] of Object.entries(this.routes)) {
-      const matched = providers.some((provider) => provider.model.toLowerCase() === target);
+    for (const [routeName, entry] of Object.entries(this.routes)) {
+      const matched = entry.providers.some((provider) => provider.model.toLowerCase() === target);
       if (matched) {
-        return [routeName, providers];
+        return [routeName, entry.providers];
       }
     }
     return null;

@@ -8,22 +8,25 @@ export function createProxyResponse(
     itemId?: string;
     status?: 'completed' | 'in_progress' | 'incomplete';
     createdAt?: number;
+    usage?: ProxyResponseUsage;
   }
 ): ProxyResponse {
   const responseId = options?.responseId ?? `resp-${generateId()}`;
   const itemId = options?.itemId ?? `item-${generateId()}`;
   const now = options?.createdAt ?? Math.floor(Date.now() / 1000);
-  const usage: ProxyResponseUsage = {
-    input_tokens: 0,
-    output_tokens: Math.max(content.length, 0),
-    total_tokens: Math.max(content.length, 0),
-    input_tokens_details: {
-      cached_tokens: 0,
-    },
-    output_tokens_details: {
-      reasoning_tokens: 0,
-    },
-  };
+  const usage: ProxyResponseUsage =
+    options?.usage ??
+    {
+      input_tokens: 0,
+      output_tokens: Math.max(content.length, 0),
+      total_tokens: Math.max(content.length, 0),
+      input_tokens_details: {
+        cached_tokens: 0,
+      },
+      output_tokens_details: {
+        reasoning_tokens: 0,
+      },
+    };
 
   const outputItem: ProxyResponseOutputItem = {
     id: itemId,
@@ -71,6 +74,7 @@ export function createProxyStreamChunk(
     outputText?: string;
     rawEvent?: unknown;
     additionalOutputItems?: ProxyResponseOutputItem[];
+    usage?: ProxyResponseUsage;
   }
 ): string {
   const itemId = options?.itemId ?? `item-${generateId()}`;
@@ -92,6 +96,7 @@ export function createProxyStreamChunk(
     responseId: options?.responseId,
     itemId,
     status: 'completed',
+    usage: options?.usage,
   });
   if (options?.additionalOutputItems?.length) {
     response.output.push(...options.additionalOutputItems);

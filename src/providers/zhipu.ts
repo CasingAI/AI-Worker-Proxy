@@ -122,8 +122,8 @@ export class ZhipuProvider extends BaseProvider {
         for await (const chunk of stream) {
           lastRawEvent = chunk;
           let emittedForChunk = false;
-          const content = chunk.choices?.[0]?.delta?.content;
-          const deltaText = typeof content === 'string' ? content : '';
+          const delta = chunk.choices?.[0]?.delta;
+          const deltaText = extractChoiceDeltaText(delta);
           const chunkUsage = (chunk as { usage?: ProxyResponseUsage }).usage;
           if (chunkUsage) {
             lastUsage = chunkUsage;
@@ -277,7 +277,18 @@ export class ZhipuProvider extends BaseProvider {
       return '';
     }
 
-    return typeof message.content === 'string' ? message.content : '';
+    if (typeof message.content === 'string') {
+      return message.content;
+    }
+
+    if (isRecord(message)) {
+      const reasoningContent = message.reasoning_content;
+      if (typeof reasoningContent === 'string') {
+        return reasoningContent;
+      }
+    }
+
+    return '';
   }
 
   private mapToolCallItems(
@@ -426,6 +437,39 @@ function mapMessageRoleForChat(
     return role;
   }
   return undefined;
+}
+
+function extractChoiceDeltaText(delta: unknown): string {
+  if (typeof delta === 'string') {
+    return delta;
+  }
+
+  if (!isRecord(delta)) {
+    return '';
+  }
+
+  const directText = extractTextFromRecord(delta);
+  if (directText) {
+    return directText;
+  }
+
+  const nestedMessage = isRecord(delta.message) ? delta.message : undefined;
+  if (nestedMessage) {
+    return extractTextFromRecord(nestedMessage);
+  }
+
+  return '';
+}
+
+function extractTextFromRecord(record: Record<string, unknown>): string {
+  const textFields = ['content', 'reasoning_content', 'text'];
+  for (const field of textFields) {
+    const value = record[field];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+  }
+  return '';
 }
 
 function parseToolCallDeltas(toolCalls: unknown): ParsedToolCallDelta[] {

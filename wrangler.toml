@@ -23,18 +23,19 @@ persist = false
 ROUTES_CONFIG = '''
 {
   "zhipu-flash-latest": {
+    "displayName": "GLM-4.7 FlashX",
     "providers": [
       {
         "provider": "zhipu",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
-        "context_window": 200000,
-        "max_output_tokens": 16384,
-        "description": "GLM-4.7-Flash（FlashX 定价）",
-        "pricing_currency": "cny",
-        "input_price_per_1m": 0.5,
-        "input_cache_price_per_1m": 0.1,
-        "output_price_per_1m": 3
+        "contextWindow": 200000,
+        "maxOutputTokens": 16384,
+        "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
+        "pricingCurrency": "cny",
+        "inputPricePer1m": 0.5,
+        "inputCachePricePer1m": 0.1,
+        "outputPricePer1m": 3
       }
     ],
     "metadata": {

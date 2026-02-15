@@ -97,27 +97,30 @@
 
 每个 route 内的 provider 配置现在可以附加一些可选字段，代理会在 `GET /models` 与 `/v1/models` 返回的模型对象中同步这些能力信息，便于上层围绕上下文长度、定价或自定义标签做展示（旧格式仍然兼容）：
 
-- `context_window` / `max_input_tokens` / `max_output_tokens`：描述上下文与输出限制，代理会把它们映射为 OpenAI 兼容字段 `context_length`、`max_input_tokens`、`max_output_tokens`。
+- `contextWindow` / `maxInputTokens` / `maxOutputTokens`：描述上下文与输出限制，代理会把它们映射为 OpenAI 兼容字段 `context_length`、`max_input_tokens`、`max_output_tokens`。
 - `description`：可以填写可读说明，`/models` 中会包含这段文字。
-- `pricing_currency`、`input_price_per_1m`、`input_cache_price_per_1m`、`output_price_per_1m`：定义计费，代理会把这些值归集到响应的 `pricing` 结构里。
+- `pricingCurrency`、`inputPricePer1m`、`inputCachePricePer1m`、`outputPricePer1m`：定义计费，代理会把这些值归集到响应的 `pricing` 结构里。
 - `metadata`：任意键值对会被原样放进 `/models` 返回的 `metadata` 字段，适合给前端传额外标签或特性。
+
+每个 route entry 本身也可以提供一个 `displayName`，这样 `/models` 返回的对象会带上这个友好名称，方便展示，而不是只能看到 ID。
 
 例如：  
 ```json
 {
   "zhipu-flash-latest": {
+    "displayName": "GLM-4.7 FlashX",
     "providers": [
       {
         "provider": "zhipu",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
-        "context_window": 200000,
-        "max_output_tokens": 16384,
+        "contextWindow": 200000,
+        "maxOutputTokens": 16384,
         "description": "GLM-4.7-Flash（FlashX 计费）",
-        "pricing_currency": "cny",
-        "input_price_per_1m": 0.5,
-        "input_cache_price_per_1m": 0.1,
-        "output_price_per_1m": 3
+        "pricingCurrency": "cny",
+        "inputPricePer1m": 0.5,
+        "inputCachePricePer1m": 0.1,
+        "outputPricePer1m": 3
       }
     ],
     "metadata": {
@@ -127,7 +130,7 @@
   }
 }
 ```
-> 上述 `input_price_per_1m` / `output_price_per_1m` / `input_cache_price_per_1m` 采用“每百万 tokens（CNY）”的定价单位；其中 `input_cache_price_per_1m` 用于标记智谱的 Cache 套餐价格（FlashX 时段常见 0.1 元），与官方价格表一致。
+> 上述 `inputPricePer1m` / `outputPricePer1m` / `inputCachePricePer1m` 采用“每百万 tokens（CNY）”的定价单位；其中 `inputCachePricePer1m` 用于标记智谱的 Cache 套餐价格（FlashX 时段常见 0.1 元），与官方价格表一致。
 
 设置好这些字段后，`GET /models` 会额外返回 `context_length`、`max_input_tokens`、`pricing` 等字段，帮助你像调 OpenAI 一样查看代理下的模型能力。
 

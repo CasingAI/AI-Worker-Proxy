@@ -18,6 +18,7 @@ export class Router {
     owned_by: string;
     permission: string[];
     description?: string;
+    display_name?: string;
     context_length?: number;
     max_input_tokens?: number;
     max_output_tokens?: number;
@@ -33,10 +34,10 @@ export class Router {
       const provider = entry.providers[0];
       const pricing = provider
         ? {
-            currency: provider.pricing_currency,
-            input_per_1m: provider.input_price_per_1m,
-            input_cache_per_1m: provider.input_cache_price_per_1m,
-            output_per_1m: provider.output_price_per_1m,
+            currency: provider.pricingCurrency,
+            input_per_1m: provider.inputPricePer1m,
+            input_cache_per_1m: provider.inputCachePricePer1m,
+            output_per_1m: provider.outputPricePer1m,
           }
         : undefined;
 
@@ -46,11 +47,12 @@ export class Router {
         owned_by: 'ai-worker-proxy',
         permission: [],
         description: provider?.description,
-        context_length: provider?.context_window ?? provider?.max_input_tokens,
-        max_input_tokens: provider?.max_input_tokens,
-        max_output_tokens: provider?.max_output_tokens,
+        context_length: provider?.contextWindow ?? provider?.maxInputTokens,
+        max_input_tokens: provider?.maxInputTokens,
+        max_output_tokens: provider?.maxOutputTokens,
         pricing,
         metadata: entry.metadata,
+        display_name: entry.displayName ?? routeName,
       };
     });
   }

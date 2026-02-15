@@ -108,20 +108,21 @@ export interface ProviderConfig {
   model: string;
   apiKeys: string[]; // Array of env var names
   baseUrl?: string; // Optional custom base URL (primarily for zhipu)
-  context_window?: number;
-  max_input_tokens?: number;
-  max_output_tokens?: number;
+  contextWindow?: number;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
   description?: string;
   metadata?: Record<string, unknown>;
-  pricing_currency?: string;
-  input_price_per_1m?: number;
-  input_cache_price_per_1m?: number;
-  output_price_per_1m?: number;
+  pricingCurrency?: string;
+  inputPricePer1m?: number;
+  inputCachePricePer1m?: number;
+  outputPricePer1m?: number;
 }
 
 export interface RouteEntry {
   providers: ProviderConfig[];
   metadata?: Record<string, unknown>;
+  displayName?: string;
 }
 
 export interface RouteConfig {

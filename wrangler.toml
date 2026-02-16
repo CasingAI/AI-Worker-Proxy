@@ -45,7 +45,7 @@ ROUTES_CONFIG = '''
     },
     "flags": []
   },
-    "zhipu-flash-latest": {
+    "zhipu-flash-latest-medium": {
     "displayName": "GLM 4.7 Flash X",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
     "contextWindow": 200000,
@@ -68,7 +68,7 @@ ROUTES_CONFIG = '''
     },
     "flags": []
   },
-    "zhipu-flash-latest": {
+    "zhipu-flash-latest-low": {
     "displayName": "GLM 4.7 Flash X Low",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
     "contextWindow": 200000,

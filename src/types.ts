@@ -38,7 +38,7 @@ export type ToolChoice =
   | { type: 'function'; function: { name: string } }
   | { type: 'function'; name: string };
 
-export type ReasoningEffort = 'low' | 'medium' | 'high';
+export type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh';
 
 export type ProxyInputRole = 'system' | 'user' | 'assistant' | 'developer' | 'tool' | 'function';
 

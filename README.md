@@ -121,7 +121,7 @@
 - `contextWindow` / `maxInputTokens` / `maxOutputTokens`：描述上下文与输出限制，代理会把它们映射为 OpenAI 兼容字段 `context_length`、`max_input_tokens`、`max_output_tokens`。
 - `pricingCurrency`、`inputPricePer1m`、`inputCachePricePer1m`、`outputPricePer1m`：定义计费，代理会把这些值归集到响应的 `pricing` 结构里。
 - `metadata`：任意键值对会原样出现在 `/models` 的 `metadata` 字段中，适合传额外标签或特性。
-- `metadata.reasoning_effort`：智谱 GLM 专用，通过 `wrangler.toml`/GitHub Variables 中的路由配置定义，支持 `low`、`medium`、`high`。`low` 保持默认行为，不注入链式推理提示；`medium` 会在 prompt 前插入“请使用链式思维”的说明；`high` 在此基础上还会在所有用户输入末尾附加要求输出推理步骤与不确定点的后缀。本字段不会出现在请求体中，客户端只需选择对应的路由即可切换。
+- `metadata.reasoning_effort`：智谱 GLM 专用，通过 `wrangler.toml`/GitHub Variables 中的路由配置定义，支持 `low`、`medium`、`high`、`xhigh`。`low` 保持默认行为，不注入链式推理提示；`medium` 会在 prompt 前插入“请使用链式思维”的说明；`high` 在此基础上还会在所有用户输入末尾附加要求输出推理步骤与不确定点的后缀；`xhigh` deepresearch
 - `flags`：字符串数组，直接出现在 `/models` 返回的数据里，用来列举此路由的能力标签（例如 `glm-4.6v-flash` 配置了 `["image"]`，表示具备图像理解能力）。
 
 每个 route entry 也可以提供 `displayName`，这样 `/models` 中展示的是更友好的名称而不是 ID。

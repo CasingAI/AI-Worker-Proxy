@@ -45,6 +45,29 @@ ROUTES_CONFIG = '''
     },
     "flags": []
   },
+  "zhipu-flash-latest-xhigh": {
+    "displayName": "GLM 4.7 Flash X 超强推理",
+    "description": "在高推理基础上附加严格步骤与不确定性披露，适合需要可追溯链条的场景。",
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
+    "providers": [
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7-flash",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "endpoint": "https://api.z.ai/api/paas/v4/",
+        "pricingCurrency": "cny",
+        "inputPricePer1m": 0.5,
+        "inputCachePricePer1m": 0.1,
+        "outputPricePer1m": 3
+      }
+    ],
+    "metadata": {
+      "tier": "free",
+      "reasoning_effort": "xhigh"
+    },
+    "flags": []
+  },
     "zhipu-flash-latest-medium": {
     "displayName": "GLM 4.7 Flash X",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",

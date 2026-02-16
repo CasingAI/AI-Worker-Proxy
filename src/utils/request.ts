@@ -34,11 +34,11 @@ export function extractInstructions(request: OpenAIChatRequest): string | undefi
     return request.instructions;
   }
 
-  const systemMessage = request.messages?.find((msg) => msg.role === 'system');
+  const systemMessage = request.messages?.find((msg) => msg.role === 'system' || msg.role === 'developer');
   let firstSystemInputContent: string | undefined;
   if (request.input && typeof request.input !== 'string') {
     for (const item of request.input) {
-      if (isRecord(item) && item.role === 'system') {
+      if (isRecord(item) && (item.role === 'system' || item.role === 'developer')) {
         firstSystemInputContent = normalizeContent(item.content);
         break;
       }
@@ -66,7 +66,7 @@ export function buildResponseInput(request: OpenAIChatRequest): string | ProxyIn
   }
 
   return request.messages
-    .filter((msg) => msg.role !== 'system')
+    .filter((msg) => msg.role !== 'system' && msg.role !== 'developer')
     .map((msg) => ({
       type: 'message',
       role: msg.role === 'assistant' ? 'assistant' : msg.role,

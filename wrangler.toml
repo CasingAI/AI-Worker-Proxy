@@ -19,10 +19,33 @@ persist = false
 # ====================================================================================
 
 [vars]
-# Model routing configuration (example - will be replaced by GitHub Actions)
+# Model routing configuration 
 ROUTES_CONFIG = '''
 {
-  "zhipu-flash-latest": {
+  "zhipu-flash-latest-high": {
+    "displayName": "GLM 4.7 Flash X High",
+    "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
+    "providers": [
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7-flash",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "endpoint": "https://api.z.ai/api/paas/v4/",
+        "pricingCurrency": "cny",
+        "inputPricePer1m": 0.5,
+        "inputCachePricePer1m": 0.1,
+        "outputPricePer1m": 3
+      }
+    ],
+    "metadata": {
+      "tier": "free",
+      "reasoning_effort": "high"
+    },
+    "flags": []
+  },
+    "zhipu-flash-latest": {
     "displayName": "GLM 4.7 Flash X",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
     "contextWindow": 200000,
@@ -40,7 +63,31 @@ ROUTES_CONFIG = '''
       }
     ],
     "metadata": {
-      "tier": "free"
+      "tier": "free",
+      "reasoning_effort": "medium"
+    },
+    "flags": []
+  },
+    "zhipu-flash-latest": {
+    "displayName": "GLM 4.7 Flash X Low",
+    "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择。",
+    "contextWindow": 200000,
+    "maxOutputTokens": 16384,
+    "providers": [
+      {
+        "provider": "zhipu",
+        "model": "glm-4.7-flash",
+        "apiKeys": ["ZHIPU_KEY_1"],
+        "endpoint": "https://api.z.ai/api/paas/v4/",
+        "pricingCurrency": "cny",
+        "inputPricePer1m": 0.5,
+        "inputCachePricePer1m": 0.1,
+        "outputPricePer1m": 3
+      }
+    ],
+    "metadata": {
+      "tier": "free",
+      "reasoning_effort": "low"
     },
     "flags": []
   },
@@ -62,7 +109,7 @@ ROUTES_CONFIG = '''
       }
     ],
     "metadata": {
-      "tier": "free"
+      "tier": "free",
     },
     "flags": ["image"]
   }

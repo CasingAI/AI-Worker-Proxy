@@ -2,9 +2,11 @@ import OpenAI from 'openai';
 import { BaseProvider } from './base';
 import {
   OpenAIChatRequest,
+  OpenAIMessage,
   ProviderResponse,
   ProxyResponseOutputItem,
   ProxyResponseUsage,
+  ReasoningEffort,
   Tool,
 } from '../types';
 import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
@@ -35,14 +37,19 @@ export class ZhipuProvider extends BaseProvider {
     super(model, endpoint ?? DEFAULT_BASE_URL);
   }
 
-  async chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse> {
+  async chat(
+    request: OpenAIChatRequest,
+    apiKey: string,
+    reasoningEffort?: ReasoningEffort
+  ): Promise<ProviderResponse> {
     try {
       const client = new OpenAI({
         apiKey,
         baseURL: this.endpoint,
       });
 
-      const messages = this.buildMessages(request);
+      const effort = reasoningEffort ?? 'low';
+      const messages = this.buildMessages(request, effort);
       const maxTokens = request.max_tokens ?? request.max_output_tokens;
 
       const baseParams: OpenAI.ChatCompletionCreateParams = {
@@ -59,8 +66,8 @@ export class ZhipuProvider extends BaseProvider {
 
       if (request.stream) {
         return this.handleStream(
-        client,
-        baseParams as OpenAI.ChatCompletionCreateParamsStreaming
+          client,
+          baseParams as OpenAI.ChatCompletionCreateParamsStreaming
         );
       }
 
@@ -114,7 +121,7 @@ export class ZhipuProvider extends BaseProvider {
     (async () => {
       try {
         await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
- 
+
         let fullText = '';
         let lastRawEvent: unknown;
         const functionCallStates = new Map<number, FunctionCallState>();
@@ -212,18 +219,26 @@ export class ZhipuProvider extends BaseProvider {
     };
   }
 
-  private buildMessages(request: OpenAIChatRequest): OpenAI.ChatCompletionMessageParam[] {
+  private buildMessages(
+    request: OpenAIChatRequest,
+    reasoningEffort: ReasoningEffort
+  ): OpenAI.ChatCompletionMessageParam[] {
     const normalized = [...normalizeMessages(request)];
     const instructions = request.instructions?.trim();
+    const hasSystemOrDeveloper = normalized.some(
+      (message) => message.role === 'system' || message.role === 'developer'
+    );
 
-    if (
-      instructions &&
-      !normalized.some((message) => message.role === 'system' || message.role === 'developer')
-    ) {
+    if (instructions && !hasSystemOrDeveloper) {
       normalized.unshift({
         role: 'system',
         content: instructions,
       });
+    }
+
+    const reasoningMessage = this.buildReasoningMessage(reasoningEffort);
+    if (reasoningMessage) {
+      normalized.push(reasoningMessage);
     }
 
     const chatMessages: OpenAI.ChatCompletionMessageParam[] = [];
@@ -240,24 +255,24 @@ export class ZhipuProvider extends BaseProvider {
       const toolCalls =
         role === 'assistant'
           ? message.tool_calls
-              ?.map((toolCall) => {
-                const functionName = toolCall.function?.name;
-                if (!functionName) {
-                  return undefined;
-                }
+            ?.map((toolCall) => {
+              const functionName = toolCall.function?.name;
+              if (!functionName) {
+                return undefined;
+              }
 
-                return {
-                  id: toolCall.id,
-                  type: toolCall.type,
-                  function: {
-                    name: functionName,
-                    arguments: toolCall.function.arguments ?? '{}',
-                  },
-                };
-              })
-              .filter(
-                (toolCall): toolCall is OpenAI.ChatCompletionMessageToolCall => Boolean(toolCall)
-              )
+              return {
+                id: toolCall.id,
+                type: toolCall.type,
+                function: {
+                  name: functionName,
+                  arguments: toolCall.function.arguments ?? '{}',
+                },
+              };
+            })
+            .filter(
+              (toolCall): toolCall is OpenAI.ChatCompletionMessageToolCall => Boolean(toolCall)
+            )
           : undefined;
 
       chatMessages.push({
@@ -271,6 +286,31 @@ export class ZhipuProvider extends BaseProvider {
 
     return chatMessages;
   }
+
+  private buildReasoningMessage(
+    effort: ReasoningEffort
+  ): OpenAIMessage | undefined {
+    if (effort === 'low' || effort === 'medium') {
+      return undefined;
+    }
+
+    let content = ""
+    if (effort === 'high') {
+      content = `你当前处于长思考模式，请使用你的最大推理能力进行reasoning。
+你拥有以下思维习惯的最强大脑：
+- 系统性思维：总是先分析关系，理清因果关系
+- 反共识倾向：主动寻找主流观点的漏洞和反例
+- 第一性原理：不断追问"这个问题的本质是什么"
+`;
+
+    }
+    return {
+      role: 'system',
+      content: `<system-reminder>${content}</system-reminder>`,
+    };
+  }
+
+
 
   private extractAssistantMessage(message?: OpenAI.ChatCompletionMessage): string {
     if (!message) {
@@ -395,9 +435,9 @@ export class ZhipuProvider extends BaseProvider {
       rawEvent === undefined
         ? event
         : {
-            ...event,
-            __provider_raw_event: rawEvent,
-          };
+          ...event,
+          __provider_raw_event: rawEvent,
+        };
     return `data: ${JSON.stringify(payload)}\n\n`;
   }
 }

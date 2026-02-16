@@ -128,6 +128,47 @@ export function createProxyStreamChunk(
   );
 }
 
+/**
+ * 创建「思考/推理」流式增量事件（与 output_text 区分，便于客户端判断 thinking）
+ * 事件类型：response.reasoning_summary_part.delta，与 OpenAI Responses API 对齐
+ */
+export function createReasoningDeltaChunk(
+  text: string,
+  options?: {
+    itemId?: string;
+    outputIndex?: number;
+    contentIndex?: number;
+    rawEvent?: unknown;
+  }
+): string {
+  const event: Record<string, unknown> = {
+    type: 'response.reasoning_summary_part.delta',
+    item_id: options?.itemId ?? `item-${generateId()}`,
+    output_index: options?.outputIndex ?? 0,
+    content_index: options?.contentIndex ?? 0,
+    delta: text,
+  };
+  return `data: ${JSON.stringify(attachProviderRawEvent(event, options?.rawEvent))}\n\n`;
+}
+
+/**
+ * 思考/推理部分结束事件（可选，在 reasoning 流结束后发送）
+ */
+export function createReasoningDoneChunk(options?: {
+  itemId?: string;
+  outputIndex?: number;
+  contentIndex?: number;
+  rawEvent?: unknown;
+}): string {
+  const event: Record<string, unknown> = {
+    type: 'response.reasoning_summary_part.done',
+    item_id: options?.itemId ?? `item-${generateId()}`,
+    output_index: options?.outputIndex ?? 0,
+    content_index: options?.contentIndex ?? 0,
+  };
+  return `data: ${JSON.stringify(attachProviderRawEvent(event, options?.rawEvent))}\n\n`;
+}
+
 export function createResponseStartedChunk(responseId: string, itemId: string | undefined, model: string): string {
   const response = createProxyResponse('', model, {
     responseId,

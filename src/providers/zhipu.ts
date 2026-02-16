@@ -9,7 +9,13 @@ import {
   ReasoningEffort,
   Tool,
 } from '../types';
-import { createProxyResponse, createProxyStreamChunk, createResponseStartedChunk, createStreamIds } from '../utils/response-mapper';
+import {
+  createProxyResponse,
+  createProxyStreamChunk,
+  createReasoningDeltaChunk,
+  createResponseStartedChunk,
+  createStreamIds,
+} from '../utils/response-mapper';
 import { normalizeMessages } from '../utils/request';
 import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-normalizer';
 
@@ -143,17 +149,28 @@ export class ZhipuProvider extends BaseProvider {
           lastRawEvent = chunk;
           let emittedForChunk = false;
           const delta = chunk.choices?.[0]?.delta;
-          const deltaText = extractChoiceDeltaText(delta);
+          const { reasoning: reasoningDelta, outputText: outputTextDelta } =
+            extractReasoningAndOutput(delta);
           const chunkUsage = (chunk as { usage?: ProxyResponseUsage }).usage;
           if (chunkUsage) {
             lastUsage = chunkUsage;
           }
           const toolCallDeltas = parseToolCallDeltas(chunk.choices?.[0]?.delta?.tool_calls);
 
-          if (deltaText) {
-            fullText += deltaText;
+          // 思考内容 → response.reasoning_summary_part.delta（客户端可据此判断 thinking）
+          if (reasoningDelta) {
             emittedForChunk = true;
-            const chunkData = createProxyStreamChunk(deltaText, this.model, 'in_progress', {
+            const reasoningChunk = createReasoningDeltaChunk(reasoningDelta, {
+              itemId,
+              rawEvent: chunk,
+            });
+            await writer.write(encoder.encode(reasoningChunk));
+          }
+          // 正式输出 → response.output_text.delta
+          if (outputTextDelta) {
+            fullText += outputTextDelta;
+            emittedForChunk = true;
+            const chunkData = createProxyStreamChunk(outputTextDelta, this.model, 'in_progress', {
               responseId,
               itemId,
               rawEvent: chunk,
@@ -493,37 +510,32 @@ function mapMessageRoleForChat(
   return undefined;
 }
 
-function extractChoiceDeltaText(delta: unknown): string {
+/** 从 delta 中分别取出 reasoning（思考）与 outputText（正式输出），便于发不同事件类型 */
+function extractReasoningAndOutput(delta: unknown): { reasoning?: string; outputText?: string } {
   if (typeof delta === 'string') {
-    return delta;
+    return { outputText: delta };
   }
-
   if (!isRecord(delta)) {
-    return '';
+    return {};
   }
-
-  const directText = extractTextFromRecord(delta);
-  if (directText) {
-    return directText;
-  }
-
-  const nestedMessage = isRecord(delta.message) ? delta.message : undefined;
-  if (nestedMessage) {
-    return extractTextFromRecord(nestedMessage);
-  }
-
-  return '';
+  const out = getReasoningAndOutputFromRecord(delta);
+  if (out.reasoning || out.outputText) return out;
+  const nested = isRecord(delta.message) ? delta.message : undefined;
+  if (nested) return getReasoningAndOutputFromRecord(nested);
+  return {};
 }
 
-function extractTextFromRecord(record: Record<string, unknown>): string {
-  const textFields = ['content', 'reasoning_content', 'text'];
-  for (const field of textFields) {
-    const value = record[field];
-    if (typeof value === 'string' && value.length > 0) {
-      return value;
-    }
-  }
-  return '';
+function getReasoningAndOutputFromRecord(
+  record: Record<string, unknown>
+): { reasoning?: string; outputText?: string } {
+  const reasoning =
+    typeof record.reasoning_content === 'string' && record.reasoning_content.length > 0
+      ? record.reasoning_content
+      : undefined;
+  const outputText =
+    (typeof record.content === 'string' && record.content.length > 0 ? record.content : undefined) ??
+    (typeof record.text === 'string' && record.text.length > 0 ? record.text : undefined);
+  return { reasoning, outputText };
 }
 
 function parseToolCallDeltas(toolCalls: unknown): ParsedToolCallDelta[] {

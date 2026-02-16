@@ -1,6 +1,12 @@
-import { RouteConfig, ProviderConfig, Env, OpenAIChatRequest, ProviderResponse } from './types';
+import { RouteConfig, RouteEntry, ProviderConfig, Env, OpenAIChatRequest, ProviderResponse } from './types';
 import { TokenManager } from './token-manager';
 import { ProxyError } from './utils/error-handler';
+
+type RouteResolution = {
+  routeName: string;
+  entry: RouteEntry;
+  providers: ProviderConfig[];
+};
 
 export class Router {
   private routes: RouteConfig;
@@ -75,39 +81,52 @@ export class Router {
   /**
    * Get provider configurations for a given model name
    */
-  getProvidersForModel(model: string): ProviderConfig[] {
+  getProvidersForModel(model: string): RouteResolution {
     const normalizedModel = model.trim();
 
-    // Check exact alias match first
     if (this.routes[normalizedModel]) {
-      return this.routes[normalizedModel].providers;
+      return {
+        routeName: normalizedModel,
+        entry: this.routes[normalizedModel],
+        providers: this.routes[normalizedModel].providers,
+      };
     }
 
-    // Check alias match ignoring case
-    const caseInsensitiveAliasMatch = this.findRouteByAliasCaseInsensitive(normalizedModel);
-    if (caseInsensitiveAliasMatch) {
-      const [routeName, providers] = caseInsensitiveAliasMatch;
+    const aliasMatch = this.findRouteEntryByAliasCaseInsensitive(model);
+    if (aliasMatch) {
+      const [routeName, entry] = aliasMatch;
+      return {
+        routeName,
+        entry,
+        providers: entry.providers,
+      };
+    }
+
+    const providerMatch = this.findRouteEntryByProviderModel(model);
+    if (providerMatch) {
+      const [routeName, entry] = providerMatch;
+      return {
+        routeName,
+        entry,
+        providers: entry.providers,
+      };
+    }
+
+    const defaultRouteName = this.routes.default
+      ? 'default'
+      : this.routes._default
+      ? '_default'
+      : undefined;
+    if (defaultRouteName) {
+      const entry = this.routes[defaultRouteName];
       console.log(
-        `[Router] Model "${model}" matched route alias "${routeName}" by case-insensitive lookup`
+        `[Router] No configuration found for model "${model}", using explicit default route "${defaultRouteName}"`
       );
-      return providers;
-    }
-
-    // Check direct provider model match (e.g. request model = provider.model)
-    const providerModelMatch = this.findRouteByProviderModel(normalizedModel);
-    if (providerModelMatch) {
-      const [routeName, providers] = providerModelMatch;
-      console.log(`[Router] Model "${model}" matched provider model under route "${routeName}"`);
-      return providers;
-    }
-
-    // Optional explicit default route
-    const explicitDefaultRoute = this.routes.default ?? this.routes._default;
-    if (explicitDefaultRoute) {
-      console.log(
-        `[Router] No configuration found for model "${model}", using explicit default route`
-      );
-      return explicitDefaultRoute.providers;
+      return {
+        routeName: defaultRouteName,
+        entry,
+        providers: entry.providers,
+      };
     }
 
     throw new ProxyError(
@@ -128,9 +147,14 @@ export class Router {
       throw new ProxyError('Model name is required', 400);
     }
 
-    const providers = this.getProvidersForModel(model);
+    const routeResolution = this.getProvidersForModel(model);
+    const providers = routeResolution.providers;
+    const routeReasoningEffort = routeResolution.entry.metadata?.reasoning_effort;
 
     console.log(`[Router] Model "${model}" has ${providers.length} provider(s) configured`);
+    console.log(
+      `[Router] Route "${routeResolution.routeName}" reasoning_effort="${routeReasoningEffort ?? 'default'}"`
+    );
 
     let lastError: any = null;
 
@@ -143,7 +167,7 @@ export class Router {
 
       try {
         const manager = new TokenManager(config, this.env);
-        const response = await manager.executeWithRotation(request);
+        const response = await manager.executeWithRotation(request, routeReasoningEffort);
 
         if (response.success) {
           console.log(`[Router] Success with provider: ${config.provider}/${config.model}`);
@@ -184,22 +208,26 @@ export class Router {
     }
   }
 
-  private findRouteByAliasCaseInsensitive(model: string): [string, ProviderConfig[]] | null {
+  private findRouteEntryByAliasCaseInsensitive(model: string): [string, RouteEntry] | null {
     const target = model.toLowerCase();
     for (const [routeName, entry] of Object.entries(this.routes)) {
       if (routeName.toLowerCase() === target) {
-        return [routeName, entry.providers];
+        console.log(
+          `[Router] Model "${model}" matched route alias "${routeName}" by case-insensitive lookup`
+        );
+        return [routeName, entry];
       }
     }
     return null;
   }
 
-  private findRouteByProviderModel(model: string): [string, ProviderConfig[]] | null {
+  private findRouteEntryByProviderModel(model: string): [string, RouteEntry] | null {
     const target = model.toLowerCase();
     for (const [routeName, entry] of Object.entries(this.routes)) {
       const matched = entry.providers.some((provider) => provider.model.toLowerCase() === target);
       if (matched) {
-        return [routeName, entry.providers];
+        console.log(`[Router] Model "${model}" matched provider model under route "${routeName}"`);
+        return [routeName, entry];
       }
     }
     return null;

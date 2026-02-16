@@ -1,4 +1,4 @@
-import { OpenAIChatRequest, ProviderResponse } from '../types';
+import { OpenAIChatRequest, ProviderResponse, ReasoningEffort } from '../types';
 
 export interface AIProvider {
   /**
@@ -7,7 +7,7 @@ export interface AIProvider {
    * @param apiKey API key to use
    * @returns Provider response with either response object or stream
    */
-  chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse>;
+  chat(request: OpenAIChatRequest, apiKey: string, reasoningEffort?: ReasoningEffort): Promise<ProviderResponse>;
 }
 
 export abstract class BaseProvider implements AIProvider {
@@ -16,7 +16,11 @@ export abstract class BaseProvider implements AIProvider {
     protected endpoint?: string
   ) {}
 
-  abstract chat(request: OpenAIChatRequest, apiKey: string): Promise<ProviderResponse>;
+  abstract chat(
+    request: OpenAIChatRequest,
+    apiKey: string,
+    reasoningEffort?: ReasoningEffort
+  ): Promise<ProviderResponse>;
 
   protected handleError(error: any, context: string): ProviderResponse {
     console.error(`[${context}] Error:`, error);

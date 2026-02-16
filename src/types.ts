@@ -38,6 +38,8 @@ export type ToolChoice =
   | { type: 'function'; function: { name: string } }
   | { type: 'function'; name: string };
 
+export type ReasoningEffort = 'low' | 'medium' | 'high';
+
 export type ProxyInputRole = 'system' | 'user' | 'assistant' | 'developer' | 'tool' | 'function';
 
 export interface ProxyMessageInputItem {
@@ -120,9 +122,14 @@ export interface ProviderConfig {
   outputPricePer1m?: number;
 }
 
+export interface RouteMetadata {
+  reasoning_effort?: ReasoningEffort;
+  [key: string]: unknown;
+}
+
 export interface RouteEntry {
   providers: ProviderConfig[];
-  metadata?: Record<string, unknown>;
+  metadata?: RouteMetadata;
   flags?: string[];
   displayName?: string;
   description?: string;

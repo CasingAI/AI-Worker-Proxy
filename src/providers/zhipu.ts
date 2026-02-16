@@ -16,7 +16,7 @@ import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-norma
 const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4/';
 // const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
 
-const HIGH_REASONING_REMINDER = `你当前处于长思考模式，请使用你的最大推理能力进行reasoning。
+const HIGH_REASONING_REMINDER = `你当前处于长思考模式，请使用你的最大推理能力+使用最多token进行reasoning。
 你拥有以下思维习惯的最强大脑：
 - 系统性思维：总是先分析关系，理清因果关系
 - 反共识倾向：主动寻找主流观点的漏洞和反例

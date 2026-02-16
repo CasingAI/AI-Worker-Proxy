@@ -46,7 +46,7 @@ ROUTES_CONFIG = '''
     "flags": []
   },
   "zhipu-flash-latest-xhigh": {
-    "displayName": "GLM 4.7 Flash X 超强推理",
+    "displayName": "GLM 4.7 Flash X Extra High",
     "description": "在高推理基础上附加严格步骤与不确定性披露，适合需要可追溯链条的场景。",
     "contextWindow": 200000,
     "maxOutputTokens": 16384,

@@ -16,6 +16,19 @@ import { mapToolChoiceToChat, normalizeFunctionTools } from '../utils/tool-norma
 const DEFAULT_BASE_URL = 'https://api.z.ai/api/paas/v4/';
 // const DEFAULT_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4/';
 
+const HIGH_REASONING_REMINDER = `你当前处于长思考模式，请使用你的最大推理能力进行reasoning。
+你拥有以下思维习惯的最强大脑：
+- 系统性思维：总是先分析关系，理清因果关系
+- 反共识倾向：主动寻找主流观点的漏洞和反例
+- 第一性原理：不断追问"这个问题的本质是什么"
+请在回答末尾列出主要推理步骤，并逐一标注显著的不确定点或假设。`;
+
+const XHIGH_REASONING_REMINDER = `${HIGH_REASONING_REMINDER}
+在此基础上请再加倍强化：
+- 用编号列出至少三个关键推理步骤，每步后追加一句"我对这一步的不确定点是：..."；
+- 补充可能的反例、替代解释或风险预估，提示哪些地方需要进一步验证；
+- 最后以"结论与建议"总结，并给出当前信心水平（如高/中/低）。`;
+
 interface ParsedToolCallDelta {
   index: number;
   id?: string;
@@ -294,19 +307,20 @@ export class ZhipuProvider extends BaseProvider {
       return undefined;
     }
 
-    let content = ""
-    if (effort === 'high') {
-      content = `你当前处于长思考模式，请使用你的最大推理能力进行reasoning。
-你拥有以下思维习惯的最强大脑：
-- 系统性思维：总是先分析关系，理清因果关系
-- 反共识倾向：主动寻找主流观点的漏洞和反例
-- 第一性原理：不断追问"这个问题的本质是什么"
-`;
+    const reminder =
+      effort === 'xhigh'
+        ? XHIGH_REASONING_REMINDER
+        : effort === 'high'
+        ? HIGH_REASONING_REMINDER
+        : undefined;
 
+    if (!reminder) {
+      return undefined;
     }
+
     return {
       role: 'system',
-      content: `<system-reminder>${content}</system-reminder>`,
+      content: `<system-reminder>${reminder}</system-reminder>`,
     };
   }
 

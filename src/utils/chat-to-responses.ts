@@ -426,6 +426,17 @@ export async function* streamChatToResponseEvents(
         });
       }
     } else if (delta.tool_calls && delta.tool_calls.length > 0) {
+      // 与 OpenAI 文档一致：必须先发当前 item 的 output_item.done，再发下一个 output_item.added
+      const lastItem = responseObject.output.at(-1);
+      const needsClose =
+        (lastItem?.type === 'message' && (lastItem as ResponseOutputMessage).status === 'in_progress') ||
+        (lastItem?.type === 'reasoning' && (lastItem as ResponseReasoningItemLike).status === 'in_progress');
+      if (needsClose) {
+        for await (const e of closeLastOutputItem(responseObject, push)) {
+          yield e;
+        }
+      }
+
       const tc = delta.tool_calls[0];
       let currentOutputItem = responseObject.output.at(-1);
 

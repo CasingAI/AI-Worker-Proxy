@@ -13,6 +13,7 @@ import {
   createProxyResponse,
   createProxyStreamChunk,
   createReasoningDeltaChunk,
+  createReasoningDoneChunk,
   createResponseStartedChunk,
   createStreamIds,
 } from '../utils/response-mapper';
@@ -142,9 +143,12 @@ export class ZhipuProvider extends BaseProvider {
         await writer.write(encoder.encode(createResponseStartedChunk(responseId, itemId, this.model)));
 
         let fullText = '';
+        let fullReasoningText = '';
         let lastRawEvent: unknown;
         const functionCallStates = new Map<number, FunctionCallState>();
         let nextFunctionOutputIndex = 1;
+        let hasEmittedReasoning = false;
+        let reasoningDoneEmitted = false;
         for await (const chunk of stream) {
           lastRawEvent = chunk;
           let emittedForChunk = false;
@@ -157,17 +161,27 @@ export class ZhipuProvider extends BaseProvider {
           }
           const toolCallDeltas = parseToolCallDeltas(chunk.choices?.[0]?.delta?.tool_calls);
 
-          // 思考内容 → response.reasoning_summary_part.delta（客户端可据此判断 thinking）
+          // 思考内容 → response.reasoning_summary_part.delta（与 OpenAI Responses API 对齐，并累积供最终 summary + usage.reasoning_tokens）
           if (reasoningDelta) {
             emittedForChunk = true;
+            hasEmittedReasoning = true;
+            fullReasoningText += reasoningDelta;
             const reasoningChunk = createReasoningDeltaChunk(reasoningDelta, {
               itemId,
               rawEvent: chunk,
             });
             await writer.write(encoder.encode(reasoningChunk));
           }
-          // 正式输出 → response.output_text.delta
+          // 正式输出 → response.output_text.delta（若此前有过 reasoning，先发 reasoning_summary_part.done）
           if (outputTextDelta) {
+            if (hasEmittedReasoning && !reasoningDoneEmitted) {
+              reasoningDoneEmitted = true;
+              const reasoningDoneChunk = createReasoningDoneChunk({
+                itemId,
+                rawEvent: chunk,
+              });
+              await writer.write(encoder.encode(reasoningDoneChunk));
+            }
             fullText += outputTextDelta;
             emittedForChunk = true;
             const chunkData = createProxyStreamChunk(outputTextDelta, this.model, 'in_progress', {
@@ -226,13 +240,40 @@ export class ZhipuProvider extends BaseProvider {
           await writer.write(encoder.encode(this.serializeSseEvent(outputDoneEvent, lastRawEvent)));
         }
 
+        // 与 OpenAI Responses API 对齐：usage 含 output_tokens_details.reasoning_tokens；若有 reasoning 则写入 response.output[0].content
+        const hasReasoning = fullReasoningText.length > 0;
+        const reasoningTokens =
+          lastUsage?.output_tokens_details?.reasoning_tokens ??
+          (hasReasoning ? Math.max(1, Math.ceil(fullReasoningText.length / 4)) : undefined);
+        const finalUsage: ProxyResponseUsage | undefined =
+          lastUsage != null
+            ? reasoningTokens != null
+              ? {
+                  ...lastUsage,
+                  output_tokens_details: {
+                    ...lastUsage.output_tokens_details,
+                    reasoning_tokens: reasoningTokens,
+                  },
+                }
+              : lastUsage
+            : reasoningTokens != null
+              ? {
+                  input_tokens: 0,
+                  output_tokens: 0,
+                  total_tokens: 0,
+                  input_tokens_details: { cached_tokens: 0 },
+                  output_tokens_details: { reasoning_tokens: reasoningTokens },
+                }
+              : undefined;
+
         const finishChunk = createProxyStreamChunk('', this.model, 'completed', {
           responseId,
           itemId,
           outputText: fullText,
           rawEvent: lastRawEvent,
           additionalOutputItems,
-          usage: lastUsage,
+          usage: finalUsage,
+          reasoningSummary: hasReasoning ? fullReasoningText : undefined,
         });
         await writer.write(encoder.encode(finishChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));

@@ -29,7 +29,7 @@ ROUTES_CONFIG = '''
     "maxOutputTokens": 16384,
     "providers": [
       {
-        "provider": "zhipu",
+        "provider": "openaiChat",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
         "endpoint": "https://api.z.ai/api/paas/v4/",
@@ -52,7 +52,7 @@ ROUTES_CONFIG = '''
     "maxOutputTokens": 16384,
     "providers": [
       {
-        "provider": "zhipu",
+        "provider": "openaiChat",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
         "endpoint": "https://api.z.ai/api/paas/v4/",
@@ -75,7 +75,7 @@ ROUTES_CONFIG = '''
     "maxOutputTokens": 16384,
     "providers": [
       {
-        "provider": "zhipu",
+        "provider": "openaiChat",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
         "endpoint": "https://api.z.ai/api/paas/v4/",
@@ -98,7 +98,7 @@ ROUTES_CONFIG = '''
     "maxOutputTokens": 16384,
     "providers": [
       {
-        "provider": "zhipu",
+        "provider": "openaiChat",
         "model": "glm-4.7-flash",
         "apiKeys": ["ZHIPU_KEY_1"],
         "endpoint": "https://api.z.ai/api/paas/v4/",
@@ -121,7 +121,7 @@ ROUTES_CONFIG = '''
     "maxOutputTokens": 0,
     "providers": [
       {
-        "provider": "zhipu",
+        "provider": "openaiChat",
         "model": "glm-4.6v-flash",
         "apiKeys": ["ZHIPU_CN_KEY"],
         "endpoint": "https://open.bigmodel.cn/api/paas/v4",

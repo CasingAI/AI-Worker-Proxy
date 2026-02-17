@@ -138,6 +138,48 @@ export function createProxyStreamChunk(
 }
 
 /**
+ * 仅创建 message（output_index 0）的完成事件：output_text.done + output_item.done。
+ * 用于按 output_index 顺序发送时，在 tool 完成事件之前发送。
+ */
+export function createMessageItemDoneStreamChunk(
+  outputText: string,
+  itemId: string,
+  messageItem: ProxyResponseOutputItem,
+  options?: { rawEvent?: unknown }
+): string {
+  const outputTextDoneEvent: Record<string, unknown> = {
+    type: 'response.output_text.done',
+    item_id: itemId,
+    output_index: 0,
+    content_index: 0,
+    text: outputText,
+  };
+  const outputItemDoneEvent: Record<string, unknown> = {
+    type: 'response.output_item.done',
+    output_index: 0,
+    item: messageItem,
+  };
+  return (
+    `data: ${JSON.stringify(attachProviderRawEvent(outputTextDoneEvent, options?.rawEvent))}\n\n` +
+    `data: ${JSON.stringify(attachProviderRawEvent(outputItemDoneEvent, options?.rawEvent))}\n\n`
+  );
+}
+
+/**
+ * 仅创建 response.completed 事件。用于在 message(0) 与 tool(1+) 完成事件之后发送。
+ */
+export function createResponseCompletedStreamChunk(
+  response: ProxyResponse,
+  options?: { rawEvent?: unknown }
+): string {
+  const completedEvent: Record<string, unknown> = {
+    type: 'response.completed',
+    response,
+  };
+  return `data: ${JSON.stringify(attachProviderRawEvent(completedEvent, options?.rawEvent))}\n\n`;
+}
+
+/**
  * 创建「思考/推理」流式增量事件（与 output_text 区分，便于客户端判断 thinking）
  * 事件类型：response.reasoning_summary_part.delta，与 OpenAI Responses API 对齐
  */

@@ -10,10 +10,12 @@ import {
   Tool,
 } from '../types';
 import {
+  createMessageItemDoneStreamChunk,
   createProxyResponse,
   createProxyStreamChunk,
   createReasoningDeltaChunk,
   createReasoningDoneChunk,
+  createResponseCompletedStreamChunk,
   createResponseStartedChunk,
   createStreamIds,
 } from '../utils/response-mapper';
@@ -220,25 +222,6 @@ export class ZhipuProvider extends BaseProvider {
         const orderedStates = [...functionCallStates.values()].sort(
           (left, right) => left.outputIndex - right.outputIndex
         );
-        for (const state of orderedStates) {
-          const completedItem = this.toFunctionCallOutputItem(state, 'completed');
-          additionalOutputItems.push(completedItem);
-
-          const argumentsDoneEvent = {
-            type: 'response.function_call_arguments.done',
-            item_id: state.itemId,
-            output_index: state.outputIndex,
-            arguments: state.arguments,
-          };
-          await writer.write(encoder.encode(this.serializeSseEvent(argumentsDoneEvent, lastRawEvent)));
-
-          const outputDoneEvent = {
-            type: 'response.output_item.done',
-            output_index: state.outputIndex,
-            item: completedItem,
-          };
-          await writer.write(encoder.encode(this.serializeSseEvent(outputDoneEvent, lastRawEvent)));
-        }
 
         // 与 OpenAI Responses API 对齐：usage 含 output_tokens_details.reasoning_tokens；若有 reasoning 则写入 response.output[0].content
         const hasReasoning = fullReasoningText.length > 0;
@@ -266,16 +249,51 @@ export class ZhipuProvider extends BaseProvider {
                 }
               : undefined;
 
-        const finishChunk = createProxyStreamChunk('', this.model, 'completed', {
+        // 先构建 response（仅 message 项），用于按 output_index 顺序发送：先 message(0)，再 tool(1+)，最后 response.completed
+        const response = createProxyResponse(fullText, this.model, {
           responseId,
           itemId,
-          outputText: fullText,
-          rawEvent: lastRawEvent,
-          additionalOutputItems,
+          status: 'completed',
           usage: finalUsage,
           reasoningSummary: hasReasoning ? fullReasoningText : undefined,
         });
-        await writer.write(encoder.encode(finishChunk));
+
+        // 1) 先发 message（output_index 0）完成事件
+        const messageItemDoneChunk = createMessageItemDoneStreamChunk(
+          fullText,
+          itemId,
+          response.output[0],
+          { rawEvent: lastRawEvent }
+        );
+        await writer.write(encoder.encode(messageItemDoneChunk));
+
+        // 2) 再发各 tool（output_index 1+）完成事件
+        for (const state of orderedStates) {
+          const completedItem = this.toFunctionCallOutputItem(state, 'completed');
+          additionalOutputItems.push(completedItem);
+
+          const argumentsDoneEvent = {
+            type: 'response.function_call_arguments.done',
+            item_id: state.itemId,
+            output_index: state.outputIndex,
+            arguments: state.arguments,
+          };
+          await writer.write(encoder.encode(this.serializeSseEvent(argumentsDoneEvent, lastRawEvent)));
+
+          const outputDoneEvent = {
+            type: 'response.output_item.done',
+            output_index: state.outputIndex,
+            item: completedItem,
+          };
+          await writer.write(encoder.encode(this.serializeSseEvent(outputDoneEvent, lastRawEvent)));
+        }
+
+        // 3) 把 tool 项并入 response 后发 response.completed
+        response.output.push(...additionalOutputItems);
+        const completedChunk = createResponseCompletedStreamChunk(response, {
+          rawEvent: lastRawEvent,
+        });
+        await writer.write(encoder.encode(completedChunk));
         await writer.write(encoder.encode('data: [DONE]\n\n'));
       } catch (error) {
         console.error('ZhipuProvider stream error:', error);

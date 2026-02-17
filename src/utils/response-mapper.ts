@@ -9,6 +9,8 @@ export function createProxyResponse(
     status?: 'completed' | 'in_progress' | 'incomplete';
     createdAt?: number;
     usage?: ProxyResponseUsage;
+    /** 与 OpenAI Responses API 对齐：有 reasoning 时写入 message content 并参与 usage */
+    reasoningSummary?: string;
   }
 ): ProxyResponse {
   const responseId = options?.responseId ?? `resp-${generateId()}`;
@@ -28,19 +30,23 @@ export function createProxyResponse(
       },
     };
 
+  const contentParts: Array<{ type: string; text?: string; annotations?: unknown[]; summary?: string }> = [];
+  if (options?.reasoningSummary) {
+    contentParts.push({ type: 'reasoning', summary: options.reasoningSummary });
+  }
+  contentParts.push({
+    type: 'output_text',
+    text: content,
+    annotations: [],
+  });
+
   const outputItem: ProxyResponseOutputItem = {
     id: itemId,
     type: 'message',
     role: 'assistant',
     status: options?.status ?? 'completed',
-    content: [
-      {
-        type: 'output_text',
-        text: content,
-        annotations: [],
-      },
-    ],
-  };
+    content: contentParts,
+  } as ProxyResponseOutputItem;
 
   return {
     id: responseId,
@@ -75,6 +81,8 @@ export function createProxyStreamChunk(
     rawEvent?: unknown;
     additionalOutputItems?: ProxyResponseOutputItem[];
     usage?: ProxyResponseUsage;
+    /** 与 OpenAI Responses API 对齐：有 reasoning 时写入最终 response.output[0].content */
+    reasoningSummary?: string;
   }
 ): string {
   const itemId = options?.itemId ?? `item-${generateId()}`;
@@ -97,6 +105,7 @@ export function createProxyStreamChunk(
     itemId,
     status: 'completed',
     usage: options?.usage,
+    reasoningSummary: options?.reasoningSummary,
   });
   if (options?.additionalOutputItems?.length) {
     response.output.push(...options.additionalOutputItems);

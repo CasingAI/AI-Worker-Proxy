@@ -1,15 +1,15 @@
 import { AIProvider } from './base';
 import { OpenAIProvider } from './openai';
-import { ZhipuProvider } from './zhipu';
+import { OpenAIChatProvider } from './openai-chat';
 import { ProviderConfig, Env } from '../types';
 
 export function createProvider(config: ProviderConfig, _env: Env): AIProvider {
   switch (config.provider) {
     case 'openai':
-      return new OpenAIProvider(config.model);
+      return new OpenAIProvider(config.model, config.endpoint);
 
-    case 'zhipu':
-      return new ZhipuProvider(config.model, config.endpoint ?? config.baseUrl);
+    case 'openaiChat':
+      return new OpenAIChatProvider(config.model, config.endpoint ?? config.baseUrl);
 
     default:
       throw new Error(`Unknown provider: ${config.provider}`);

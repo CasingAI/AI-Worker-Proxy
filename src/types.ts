@@ -105,11 +105,12 @@ export type ProxyResponseUsage = NonNullable<OpenAIResponse['usage']>;
 export type ProxyResponse = OpenAIResponse;
 
 // Provider configuration
+// openai = OpenAI Responses API; openaiChat = OpenAI-format Chat Completions (e.g. 智谱)
 export interface ProviderConfig {
-  provider: 'openai' | 'zhipu';
+  provider: 'openai' | 'openaiChat';
   model: string;
   apiKeys: string[]; // Array of env var names
-  endpoint?: string; // Preferred custom endpoint (primarily for zhipu)
+  endpoint?: string; // Custom base URL (e.g. for openaiChat: 智谱 endpoint)
   baseUrl?: string; // Legacy custom base URL (kept for older configs)
   contextWindow?: number;
   maxInputTokens?: number;

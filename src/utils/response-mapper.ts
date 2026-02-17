@@ -180,42 +180,58 @@ export function createResponseCompletedStreamChunk(
 }
 
 /**
- * 创建「思考/推理」流式增量事件（与 output_text 区分，便于客户端判断 thinking）
- * 事件类型：response.reasoning_summary_part.delta，与 OpenAI Responses API 对齐
+ * 创建「思考/推理」摘要流式增量事件（与 output_text 区分，便于客户端判断 thinking）
+ * 事件类型：response.reasoning_summary_text.delta，与 OpenAI 5.x+ Responses API 对齐
  */
 export function createReasoningDeltaChunk(
   text: string,
   options?: {
     itemId?: string;
     outputIndex?: number;
+    /** 摘要部分在 reasoning summary 中的下标，对应 reasoning_summary_text 的 summary_index */
+    summaryIndex?: number;
+    /** @deprecated 请用 summaryIndex，与 5.x reasoning_summary_text 对齐 */
     contentIndex?: number;
+    sequenceNumber?: number;
     rawEvent?: unknown;
   }
 ): string {
+  const summaryIndex = options?.summaryIndex ?? options?.contentIndex ?? 0;
   const event: Record<string, unknown> = {
-    type: 'response.reasoning_summary_part.delta',
+    type: 'response.reasoning_summary_text.delta',
     item_id: options?.itemId ?? `item-${generateId()}`,
     output_index: options?.outputIndex ?? 0,
-    content_index: options?.contentIndex ?? 0,
+    summary_index: summaryIndex,
+    sequence_number: options?.sequenceNumber ?? 0,
     delta: text,
   };
   return `data: ${JSON.stringify(attachProviderRawEvent(event, options?.rawEvent))}\n\n`;
 }
 
 /**
- * 思考/推理部分结束事件（可选，在 reasoning 流结束后发送）
+ * 思考/推理摘要结束事件（可选，在 reasoning 流结束后发送）
+ * 事件类型：response.reasoning_summary_text.done，与 OpenAI 5.x+ Responses API 对齐
  */
 export function createReasoningDoneChunk(options?: {
   itemId?: string;
   outputIndex?: number;
+  /** 摘要部分在 reasoning summary 中的下标，对应 reasoning_summary_text 的 summary_index */
+  summaryIndex?: number;
+  /** @deprecated 请用 summaryIndex，与 5.x reasoning_summary_text 对齐 */
   contentIndex?: number;
+  /** 已完成的摘要全文 */
+  text?: string;
+  sequenceNumber?: number;
   rawEvent?: unknown;
 }): string {
+  const summaryIndex = options?.summaryIndex ?? options?.contentIndex ?? 0;
   const event: Record<string, unknown> = {
-    type: 'response.reasoning_summary_part.done',
+    type: 'response.reasoning_summary_text.done',
     item_id: options?.itemId ?? `item-${generateId()}`,
     output_index: options?.outputIndex ?? 0,
-    content_index: options?.contentIndex ?? 0,
+    summary_index: summaryIndex,
+    sequence_number: options?.sequenceNumber ?? 0,
+    text: options?.text ?? '',
   };
   return `data: ${JSON.stringify(attachProviderRawEvent(event, options?.rawEvent))}\n\n`;
 }

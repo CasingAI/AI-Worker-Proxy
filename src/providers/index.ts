@@ -1,5 +1,5 @@
 import { AIProvider } from './base';
-import { OpenAIProvider } from './openai';
+import { OpenAIProvider } from './openai-responses';
 import { OpenAIChatProvider } from './openai-chat';
 import { ProviderConfig, Env } from '../types';
 

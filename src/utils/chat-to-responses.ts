@@ -1,6 +1,11 @@
 /**
  * Chat Completions → Responses API 转换层
- * 严格模仿 huggingface/responses.js 的转换逻辑（不含 MCP）。
+ * 逻辑对照 huggingface/responses.js（input→messages、流式事件顺序、closeLastOutputItem），
+ * 差异：
+ * - reasoning 事件用官方 response.reasoning.delta / response.reasoning.done（responses.js 用自创 reasoning_text.*）
+ * - reasoning 的 output item 用官方 summary: [{ type: 'summary_text', text }]，无 content.reasoning_text
+ * - output_index 用 responseObject.output.length - 1（responses.js 对 message/reasoning 写死 0 会错）
+ * - 不含 MCP（listMcpTools、mcp_call、mcp_approval 等）
  */
 
 import type {
@@ -8,6 +13,7 @@ import type {
   ResponseOutputMessage,
   ResponseFunctionToolCall,
   ResponseOutputItem,
+  ResponseReasoningItem,
 } from 'openai/resources/responses/responses';
 import type {
   ChatCompletionChunk,
@@ -19,21 +25,16 @@ import type { OpenAIChatRequest, OpenAIMessage, ProxyInputItem, ProxyResponse, T
 import { normalizeFunctionTools } from './tool-normalizer';
 import { mapToolChoiceToChat } from './tool-normalizer';
 
-// --- 与 responses.js openai_patch 对齐：reasoning 扩展 ---
-export interface ReasoningTextContent {
-  type: 'reasoning_text';
-  text: string;
-}
+/** 官方 ResponseReasoningItem 仅含 summary，流式时内部用 _accumulated 存文本 */
+export type ResponseReasoningItemLike = Omit<ResponseReasoningItem, 'summary'> & {
+  summary: Array<{ type: 'summary_text'; text: string }>;
+  _accumulated?: string;
+};
 
-export interface ResponseReasoningItemLike {
-  id: string;
-  type: 'reasoning';
-  status: 'in_progress' | 'completed';
-  content: ReasoningTextContent[];
-  summary?: unknown[];
-}
-
-export type ResponseOutputItemLike = ResponseOutputItem | (ResponseOutputMessage & { content: Array<{ type: 'output_text'; text: string; annotations: unknown[] }> }) | ResponseReasoningItemLike;
+export type ResponseOutputItemLike =
+  | ResponseOutputItem
+  | (ResponseOutputMessage & { content: Array<{ type: 'output_text'; text: string; annotations: unknown[] }> })
+  | ResponseReasoningItemLike;
 
 /** Chat delta 可能带 reasoning_content / reasoning（智谱等） */
 export type DeltaWithReasoning = ChatCompletionChunk['choices'][0]['delta'] & {
@@ -206,7 +207,15 @@ function normalizeContent(v: unknown): string {
   return String(v);
 }
 
-// ========== 构建 Chat Completions 请求体（对照 responses.js 377-412）==========
+// ========== 构建 Chat Completions 请求体（严格对照 responses.js 377-412）==========
+
+/** 与 Responses API 对齐时 request 可能带 text / reasoning（与 responses.js req.body 一致） */
+type RequestWithResponsesParams = OpenAIChatRequest & {
+  text?: {
+    format?: { type: string; name?: string; description?: string; schema?: Record<string, unknown>; strict?: boolean };
+  };
+  reasoning?: { effort?: string };
+};
 
 export function buildChatPayload(
   request: OpenAIChatRequest,
@@ -215,17 +224,43 @@ export function buildChatPayload(
 ): ChatCompletionCreateParamsStreaming {
   const tools = mapToolsToChat(request.tools);
   const tool_choice = mapToolChoice(request.tool_choice);
+  const req = request as RequestWithResponsesParams;
+  const max_tokens =
+    req.max_output_tokens === null ? undefined : (req.max_output_tokens ?? req.max_tokens ?? undefined);
+  const response_format = mapResponseFormat(req.text?.format);
+  const reasoning_effort = req.reasoning?.effort as 'low' | 'medium' | 'high' | undefined;
 
   return {
     model,
     messages,
     stream: true,
-    max_tokens: request.max_output_tokens ?? request.max_tokens ?? undefined,
+    max_tokens,
     temperature: request.temperature,
     top_p: request.top_p,
     tools: tools?.length ? tools : undefined,
     tool_choice: tool_choice ?? 'auto',
+    ...(response_format && { response_format }),
+    ...(reasoning_effort && { reasoning_effort }),
   };
+}
+
+function mapResponseFormat(
+  format?: { type: string; name?: string; description?: string; schema?: Record<string, unknown>; strict?: boolean }
+): ChatCompletionCreateParamsStreaming['response_format'] {
+  if (!format) return undefined;
+  if (format.type === 'json_schema' && format.name && format.schema) {
+    return {
+      type: 'json_schema',
+      json_schema: {
+        name: format.name,
+        schema: format.schema,
+        description: format.description,
+        strict: format.strict ?? false,
+      },
+    };
+  }
+  if (format.type === 'json_object') return { type: 'json_object' };
+  return { type: 'text' };
 }
 
 function mapToolsToChat(tools?: Tool[]): ChatCompletionTool[] | undefined {
@@ -268,7 +303,7 @@ export async function* streamChatToResponseEvents(
   options: { model: string; attachRawEvent?: (event: unknown) => unknown }
 ): AsyncGenerator<ResponseStreamEvent> {
   let sequenceNumber = 0;
-  const push = (ev: Omit<ResponseStreamEvent, 'sequence_number'>): ResponseStreamEvent => ({
+  const push = (ev: Omit<ResponseStreamEvent, 'sequence_number'> & { type: string }): ResponseStreamEvent => ({
     ...ev,
     sequence_number: sequenceNumber++,
   });
@@ -335,14 +370,14 @@ export async function* streamChatToResponseEvents(
             id: generateUniqueId('rs'),
             type: 'reasoning',
             status: 'in_progress',
-            content: [],
             summary: [],
+            _accumulated: '',
           };
           responseObject.output.push(outputObject);
           yield push({
             type: 'response.output_item.added',
             output_index: responseObject.output.length - 1,
-            item: outputObject,
+            item: { id: outputObject.id, type: 'reasoning', status: 'in_progress', summary: [] },
           });
         }
       }
@@ -350,12 +385,12 @@ export async function* streamChatToResponseEvents(
       if (currentTextMode === 'text') {
         const currentOutputMessage = responseObject.output.at(-1) as ResponseOutputMessage;
         if (currentOutputMessage.content.length === 0) {
-          const contentPart = {
-            type: 'output_text' as const,
+          const contentPart: { type: 'output_text'; text: string; annotations: unknown[] } = {
+            type: 'output_text',
             text: '',
-            annotations: [] as unknown[],
+            annotations: [],
           };
-          currentOutputMessage.content.push(contentPart);
+          currentOutputMessage.content.push(contentPart as ResponseOutputMessage['content'][number]);
           yield push({
             type: 'response.content_part.added',
             item_id: currentOutputMessage.id,
@@ -380,24 +415,13 @@ export async function* streamChatToResponseEvents(
         });
       } else if (currentTextMode === 'reasoning') {
         const currentReasoningItem = responseObject.output.at(-1) as ResponseReasoningItemLike;
-        if (currentReasoningItem.content.length === 0) {
-          const contentPart: ReasoningTextContent = { type: 'reasoning_text', text: '' };
-          currentReasoningItem.content.push(contentPart);
-          yield push({
-            type: 'response.content_part.added',
-            item_id: currentReasoningItem.id,
-            output_index: responseObject.output.length - 1,
-            content_index: currentReasoningItem.content.length - 1,
-            part: contentPart,
-          });
-        }
-        const contentPart = currentReasoningItem.content.at(-1)!;
-        contentPart.text += reasoningText ?? '';
+        if (currentReasoningItem._accumulated === undefined) currentReasoningItem._accumulated = '';
+        currentReasoningItem._accumulated += reasoningText ?? '';
         yield push({
-          type: 'response.reasoning_text.delta',
+          type: 'response.reasoning.delta',
           item_id: currentReasoningItem.id,
           output_index: responseObject.output.length - 1,
-          content_index: currentReasoningItem.content.length - 1,
+          content_index: 0,
           delta: reasoningText ?? '',
         });
       }
@@ -441,7 +465,7 @@ export async function* streamChatToResponseEvents(
 
 async function* closeLastOutputItem(
   responseObject: IncompleteResponse,
-  push: (ev: Omit<ResponseStreamEvent, 'sequence_number'>) => ResponseStreamEvent
+  push: (ev: Omit<ResponseStreamEvent, 'sequence_number'> & { type: string }) => ResponseStreamEvent
 ): AsyncGenerator<ResponseStreamEvent> {
   const lastOutputItem = responseObject.output.at(-1);
   if (!lastOutputItem) return;
@@ -472,28 +496,21 @@ async function* closeLastOutputItem(
     });
   } else if (lastOutputItem.type === 'reasoning') {
     const reasoningItem = lastOutputItem as ResponseReasoningItemLike;
-    const contentPart = reasoningItem.content?.at(-1);
-    if (contentPart) {
-      yield push({
-        type: 'response.reasoning_text.done',
-        item_id: lastOutputItem.id,
-        output_index: responseObject.output.length - 1,
-        content_index: reasoningItem.content.length - 1,
-        text: contentPart.text,
-      });
-      yield push({
-        type: 'response.content_part.done',
-        item_id: lastOutputItem.id,
-        output_index: responseObject.output.length - 1,
-        content_index: reasoningItem.content.length - 1,
-        part: contentPart,
-      });
-    }
+    const text = reasoningItem._accumulated ?? '';
+    yield push({
+      type: 'response.reasoning.done',
+      item_id: lastOutputItem.id,
+      output_index: responseObject.output.length - 1,
+      content_index: 0,
+      text,
+    });
+    reasoningItem.summary = [{ type: 'summary_text', text }];
     reasoningItem.status = 'completed';
+    delete reasoningItem._accumulated;
     yield push({
       type: 'response.output_item.done',
       output_index: responseObject.output.length - 1,
-      item: lastOutputItem,
+      item: { ...lastOutputItem, summary: reasoningItem.summary, status: 'completed' },
     });
   } else if (lastOutputItem.type === 'function_call') {
     yield push({
@@ -559,8 +576,8 @@ export function toCompletedResponse(incomplete: IncompleteResponse): ProxyRespon
 function collectOutputText(output: OpenAIResponse['output']): string {
   for (const item of output) {
     if (item.type === 'message' && Array.isArray(item.content)) {
-      const textPart = item.content.find((p): p is { type: 'output_text'; text: string } => (p as { type?: string }).type === 'output_text');
-      if (textPart?.text) return textPart.text;
+      const part = item.content.find((p) => (p as { type?: string }).type === 'output_text');
+      if (part && typeof (part as { text?: string }).text === 'string') return (part as { text: string }).text;
     }
   }
   return '';

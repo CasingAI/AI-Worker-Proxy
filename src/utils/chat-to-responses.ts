@@ -2,7 +2,7 @@
  * Chat Completions → Responses API 转换层
  * 逻辑对照 huggingface/responses.js（input→messages、流式事件顺序、closeLastOutputItem），
  * 差异：
- * - reasoning 事件用官方 response.reasoning_text.delta / response.reasoning_text.done（与 openai 5.x+ 一致）
+ * - reasoning 事件用官方 response.reasoning_text.delta / response.reasoning_text.done（与 openai 6.x 一致）
  * - reasoning 的 output item 用官方 summary: [{ type: 'summary_text', text }]，无 content.reasoning_text
  * - output_index 用 responseObject.output.length - 1（responses.js 对 message/reasoning 写死 0 会错）
  * - 不含 MCP（listMcpTools、mcp_call、mcp_approval 等）

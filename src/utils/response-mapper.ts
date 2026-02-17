@@ -181,7 +181,7 @@ export function createResponseCompletedStreamChunk(
 
 /**
  * 创建「思考/推理」摘要流式增量事件（与 output_text 区分，便于客户端判断 thinking）
- * 事件类型：response.reasoning_summary_text.delta，与 OpenAI 5.x+ Responses API 对齐
+ * 事件类型：response.reasoning_summary_text.delta，与 OpenAI 6.x Responses API 对齐
  */
 export function createReasoningDeltaChunk(
   text: string,
@@ -190,7 +190,7 @@ export function createReasoningDeltaChunk(
     outputIndex?: number;
     /** 摘要部分在 reasoning summary 中的下标，对应 reasoning_summary_text 的 summary_index */
     summaryIndex?: number;
-    /** @deprecated 请用 summaryIndex，与 5.x reasoning_summary_text 对齐 */
+    /** @deprecated 请用 summaryIndex，与 6.x reasoning_summary_text 对齐 */
     contentIndex?: number;
     sequenceNumber?: number;
     rawEvent?: unknown;
@@ -210,14 +210,14 @@ export function createReasoningDeltaChunk(
 
 /**
  * 思考/推理摘要结束事件（可选，在 reasoning 流结束后发送）
- * 事件类型：response.reasoning_summary_text.done，与 OpenAI 5.x+ Responses API 对齐
+ * 事件类型：response.reasoning_summary_text.done，与 OpenAI 6.x Responses API 对齐
  */
 export function createReasoningDoneChunk(options?: {
   itemId?: string;
   outputIndex?: number;
   /** 摘要部分在 reasoning summary 中的下标，对应 reasoning_summary_text 的 summary_index */
   summaryIndex?: number;
-  /** @deprecated 请用 summaryIndex，与 5.x reasoning_summary_text 对齐 */
+  /** @deprecated 请用 summaryIndex，与 6.x reasoning_summary_text 对齐 */
   contentIndex?: number;
   /** 已完成的摘要全文 */
   text?: string;

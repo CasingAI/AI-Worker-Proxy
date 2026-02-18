@@ -1,6 +1,6 @@
 import { ProviderConfig, Env, OpenAIChatRequest, ProviderResponse, ReasoningEffort } from './types';
 import { createProvider } from './providers';
-import { isRetryableError } from './utils/error-handler';
+import { isRetryableError, isRateLimitError } from './utils/error-handler';
 
 export class TokenManager {
   constructor(
@@ -37,6 +37,7 @@ export class TokenManager {
     }
 
     let lastError: any = null;
+    let lastStatusCode: number | undefined;
 
     // Try each API key in order
     for (const apiKey of apiKeys) {
@@ -54,6 +55,7 @@ export class TokenManager {
 
         // If response failed but it's retryable, try next key
         lastError = response.error;
+        lastStatusCode = response.statusCode;
         console.log(
           `[TokenManager] Failed with key ending in ...${apiKey.slice(-4)}: ${response.error}`
         );
@@ -64,6 +66,10 @@ export class TokenManager {
         }
       } catch (error) {
         lastError = error;
+        lastStatusCode =
+          (error as any)?.statusCode ??
+          (error as any)?.status ??
+          (isRateLimitError(error) ? 429 : undefined);
         console.error(`[TokenManager] Exception with key ending in ...${apiKey.slice(-4)}:`, error);
 
         // If it's a retryable error, continue to next key
@@ -73,11 +79,11 @@ export class TokenManager {
       }
     }
 
-    // All keys failed
+    // All keys failed：透传上游状态码（如 429），避免 429 被错误地变成 500
     return {
       success: false,
       error: lastError?.message || lastError || 'All API keys failed',
-      statusCode: lastError?.statusCode || 500,
+      statusCode: lastStatusCode ?? 500,
     };
   }
 

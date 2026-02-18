@@ -157,6 +157,7 @@ export class Router {
     );
 
     let lastError: any = null;
+    let lastStatusCode: number | undefined;
 
     // Try each provider in order
     for (let i = 0; i < providers.length; i++) {
@@ -175,20 +176,23 @@ export class Router {
         }
 
         lastError = response.error;
+        lastStatusCode = response.statusCode;
         console.log(
           `[Router] Provider ${config.provider}/${config.model} failed: ${response.error}`
         );
       } catch (error) {
         lastError = error;
+        lastStatusCode =
+          (error as any)?.statusCode ?? (error as any)?.status ?? undefined;
         console.error(`[Router] Provider ${config.provider}/${config.model} exception:`, error);
       }
     }
 
-    // All providers failed
+    // All providers failed：透传最后一次失败的上游状态码（如 429），避免 429 被错误地变成 500
     return {
       success: false,
       error: `All providers failed. Last error: ${lastError?.message || lastError || 'Unknown error'}`,
-      statusCode: 500,
+      statusCode: lastStatusCode ?? 500,
     };
   }
 

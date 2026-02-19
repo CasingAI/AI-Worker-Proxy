@@ -241,6 +241,7 @@ export function buildChatPayload(
     tool_choice: tool_choice ?? 'auto',
     ...(response_format && { response_format }),
     ...(reasoning_effort && { reasoning_effort }),
+    ...(request.customParams ?? {}),
   };
 }
 

@@ -90,6 +90,8 @@ export interface OpenAIChatRequest {
   previous_response_id?: string;
   max_tool_calls?: number;
   store?: boolean;
+  /** 由代理从 ROUTES_CONFIG 注入，合并进 Chat Completions 请求体（如智谱 tool_stream） */
+  customParams?: Record<string, unknown>;
 }
 
 type OpenAIResponseOutputItem = OpenAIResponse['output'][number];
@@ -121,6 +123,8 @@ export interface ProviderConfig {
   inputPricePer1m?: number;
   inputCachePricePer1m?: number;
   outputPricePer1m?: number;
+  /** 合并进该 provider 的 API 请求体（如 openaiChat 的 tool_stream: true） */
+  customParams?: Record<string, unknown>;
 }
 
 export interface RouteMetadata {

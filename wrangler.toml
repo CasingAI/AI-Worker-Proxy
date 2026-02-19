@@ -38,7 +38,8 @@ ROUTES_CONFIG = '''
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
-        "outputPricePer1m": 3
+        "outputPricePer1m": 3,
+        "customParams": { "tool_stream": true }
       }
     ],
     "metadata": {
@@ -61,7 +62,8 @@ ROUTES_CONFIG = '''
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
-        "outputPricePer1m": 3
+        "outputPricePer1m": 3,
+        "customParams": { "tool_stream": true }
       }
     ],
     "metadata": {
@@ -84,7 +86,8 @@ ROUTES_CONFIG = '''
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
-        "outputPricePer1m": 3
+        "outputPricePer1m": 3,
+        "customParams": { "tool_stream": true }
       }
     ],
     "metadata": {
@@ -107,7 +110,8 @@ ROUTES_CONFIG = '''
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
-        "outputPricePer1m": 3
+        "outputPricePer1m": 3,
+        "customParams": { "tool_stream": true }
       }
     ],
     "metadata": {
@@ -130,7 +134,8 @@ ROUTES_CONFIG = '''
         "pricingCurrency": "cny",
         "inputPricePer1m": 0.3,
         "inputCachePricePer1m": 0.03,
-        "outputPricePer1m": 3
+        "outputPricePer1m": 3,
+        "customParams": { "tool_stream": true }
       }
     ],
     "metadata": {

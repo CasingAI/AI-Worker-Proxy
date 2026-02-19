@@ -167,8 +167,11 @@ export class Router {
       );
 
       try {
+        const requestWithParams: OpenAIChatRequest = config.customParams
+          ? { ...request, customParams: config.customParams }
+          : request;
         const manager = new TokenManager(config, this.env);
-        const response = await manager.executeWithRotation(request, routeReasoningEffort);
+        const response = await manager.executeWithRotation(requestWithParams, routeReasoningEffort);
 
         if (response.success) {
           console.log(`[Router] Success with provider: ${config.provider}/${config.model}`);

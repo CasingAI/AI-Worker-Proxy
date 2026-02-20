@@ -69,6 +69,8 @@ wrangler secret put ZHIPU_KEY_1
 # ... 按需继续添加
 ```
 
+**可选 — Relay 白名单**：若使用 `/relay?url=...` 代理转发能力，需在 `wrangler.toml` 的 `[vars]` 或 `.dev.vars` 中配置 `RELAY_ALLOWED_HOSTS`（JSON 数组字符串，如 `["api.openai.com","api.example.com"]`）。未配置或空数组时 relay 请求会返回 403。
+
 ### 4. 本地验证
 
 ```bash

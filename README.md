@@ -189,6 +189,24 @@ print(response.output_text)
 
 ---
 
+## 🔀 Relay 代理端点
+
+除 Chat/Models 外，代理提供 **Relay** 端点，将请求原样转发到指定 URL（用于绕过 CORS 或统一鉴权等场景）。
+
+- **路径：** `GET` 或 `POST` `/relay?url=<编码后的目标 URL>`
+- **鉴权：** 与其它接口相同，需在请求头中携带 `Authorization: Bearer <PROXY_AUTH_TOKEN>`（或裸 token）
+- **白名单：** 仅在环境变量 `RELAY_ALLOWED_HOSTS` 中配置的 host 允许被转发（JSON 数组字符串，如 `["api.openai.com","api.anthropic.com"]`）。未配置或为空数组时不允许任何 relay，返回 403
+
+在 Cloudflare 控制台或 `wrangler.toml` 的 `[vars]` 中增加 `RELAY_ALLOWED_HOSTS` 即可启用。示例：
+
+```bash
+# 请求会原样转发到 https://api.example.com/foo（method、headers、body 一致）
+curl -H "Authorization: Bearer YOUR_PROXY_AUTH_TOKEN" \
+  "https://ai-proxy.YOUR-USERNAME.workers.dev/relay?url=https%3A%2F%2Fapi.example.com%2Ffoo"
+```
+
+---
+
 ## 🔒 安全建议
 
 **请不要把真正的 API Key 写进源码！** 所有敏感信息都应存在 Cloudflare Secrets 中，以防被泄露。

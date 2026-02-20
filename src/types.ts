@@ -155,6 +155,8 @@ export interface RouteConfig {
 export interface Env {
   PROXY_AUTH_TOKEN: string; // Cloudflare Secret (set in Dashboard)
   ROUTES_CONFIG: string; // Environment variable (injected from GitHub Variable)
+  /** JSON 数组字符串，仅允许 relay 到这些 host，如 ["api.openai.com","api.anthropic.com"] */
+  RELAY_ALLOWED_HOSTS?: string;
   [key: string]: any; // Dynamic API keys (Cloudflare Secrets, set in Dashboard)
 }
 

@@ -56,6 +56,77 @@ export default {
         );
       }
 
+      // Relay endpoint: forward request to url in query (auth + host allowlist required)
+      if (path === '/relay') {
+        const targetUrlRaw = url.searchParams.get('url');
+        if (!targetUrlRaw || targetUrlRaw.trim() === '') {
+          throw new ProxyError('Invalid or missing relay target URL', 400);
+        }
+        let targetUrl: URL;
+        try {
+          targetUrl = new URL(targetUrlRaw.trim());
+        } catch {
+          throw new ProxyError('Invalid or missing relay target URL', 400);
+        }
+        if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+          throw new ProxyError('Invalid or missing relay target URL', 400);
+        }
+        const targetHost = targetUrl.host;
+        let allowlist: string[];
+        try {
+          const raw = env.RELAY_ALLOWED_HOSTS ?? '[]';
+          const parsed = JSON.parse(typeof raw === 'string' ? raw : '[]') as unknown;
+          allowlist = Array.isArray(parsed)
+            ? (parsed as string[]).map((h) => String(h).trim().toLowerCase()).filter(Boolean)
+            : [];
+        } catch {
+          allowlist = [];
+        }
+        if (allowlist.length === 0 || !allowlist.includes(targetHost.toLowerCase())) {
+          throw new ProxyError('Relay target host not allowed', 403);
+        }
+        console.log(`[Worker] Relay target: ${targetHost}`);
+        const relayBody =
+          request.method !== 'GET' && request.method !== 'HEAD' ? request.body : undefined;
+        const relayHeaders = new Headers();
+        const hopByHop = new Set([
+          'connection',
+          'keep-alive',
+          'te',
+          'trailer',
+          'transfer-encoding',
+          'proxy-authorization',
+          'proxy-authenticate',
+          'proxy-connection',
+        ]);
+        request.headers.forEach((value, key) => {
+          const lower = key.toLowerCase();
+          if (hopByHop.has(lower) || lower.startsWith('proxy-')) continue;
+          relayHeaders.set(key, value);
+        });
+        relayHeaders.set('Host', targetHost);
+        const relayRequest = new Request(targetUrl.toString(), {
+          method: request.method,
+          headers: relayHeaders,
+          body: relayBody,
+        });
+        let upstream: Response;
+        try {
+          upstream = await fetch(relayRequest);
+        } catch (e) {
+          console.error('[Worker] Relay fetch failed:', e);
+          throw new ProxyError('Relay upstream request failed', 502);
+        }
+        const cors = getCORSHeaders(request);
+        const responseHeaders = new Headers(upstream.headers);
+        Object.entries(cors).forEach(([k, v]) => responseHeaders.set(k, v));
+        return new Response(upstream.body, {
+          status: upstream.status,
+          statusText: upstream.statusText,
+          headers: responseHeaders,
+        });
+      }
+
       // Only accept POST requests for chat completions
       if (request.method !== 'POST') {
         throw new ProxyError('Method not allowed', 405);

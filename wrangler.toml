@@ -146,8 +146,14 @@ ROUTES_CONFIG = '''
 }
 '''
 PROXY_AUTH_TOKEN = "testGiuyghi"
-# Relay 白名单：JSON 数组字符串，仅允许 /relay?url= 转发到这些 host（可选）
-# RELAY_ALLOWED_HOSTS = '["api.openai.com","api.anthropic.com","api.example.com"]'
+# Relay 白名单：JSON 数组，仅允许 /relay?url= 转发到这些 host
+RELAY_ALLOWED_HOSTS = '''
+[
+  "api.openai.com",
+  "api.anthropic.com",
+  "api.example.com"
+]
+'''
 
 # Secrets to set in Cloudflare Dashboard:
 # - PROXY_AUTH_TOKEN

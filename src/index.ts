@@ -1,5 +1,6 @@
 import { Env, OpenAIChatRequest } from './types';
 import { Router } from './router';
+import { handleToolsRequest, handleToolsExecuteRequest } from './tools';
 import { ProxyError, createErrorResponse } from './utils/error-handler';
 
 export default {
@@ -56,6 +57,28 @@ export default {
         );
       }
 
+      // Tools list endpoint
+      if ((path === '/tools' || path === '/v1/tools') && request.method === 'GET') {
+        const toolsResponse = await handleToolsRequest(request, env);
+        const headers = new Headers(toolsResponse.headers);
+        Object.entries(getCORSHeaders(request)).forEach(([k, v]) => headers.set(k, v));
+        return new Response(toolsResponse.body, {
+          status: toolsResponse.status,
+          headers,
+        });
+      }
+
+      // Tools execute endpoint (e.g. get_web_page, search)
+      if ((path === '/tools/execute' || path === '/v1/tools/execute') && request.method === 'POST') {
+        const execResponse = await handleToolsExecuteRequest(request, env);
+        const headers = new Headers(execResponse.headers);
+        Object.entries(getCORSHeaders(request)).forEach(([k, v]) => headers.set(k, v));
+        return new Response(execResponse.body, {
+          status: execResponse.status,
+          headers,
+        });
+      }
+
       // Relay endpoint: forward request to url in query (auth + host allowlist required)
       if (path === '/relay') {
         const targetUrlRaw = url.searchParams.get('url');
@@ -101,7 +124,7 @@ export default {
         ]);
         request.headers.forEach((value, key) => {
           const lower = key.toLowerCase();
-          if (hopByHop.has(lower) || lower.startsWith('proxy-')) continue;
+          if (hopByHop.has(lower) || lower.startsWith('proxy-')) return;
           relayHeaders.set(key, value);
         });
         relayHeaders.set('Host', targetHost);

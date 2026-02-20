@@ -207,6 +207,19 @@ curl -H "Authorization: Bearer YOUR_PROXY_AUTH_TOKEN" \
 
 ---
 
+## 🔧 Tools（Jina 搜索与读取）
+
+代理提供 **Jina Reader**（单 URL 读取）和 **Jina Search**（关键词搜索）两种工具，支持多 Key 轮换（与 AI 模型相同策略）。
+
+- **列出工具：** `GET /tools` 或 `GET /v1/tools`，返回 `get_web_page`、`search` 等函数定义。
+- **执行工具：** `POST /tools/execute` 或 `POST /v1/tools/execute`，请求体示例：
+  - 读取网页：`{"tool":"get_web_page","arguments":{"url":"https://example.com/page"}}`
+  - 搜索：`{"tool":"search","arguments":{"q":"关键词","num":5}}`
+- **鉴权：** 与其它接口相同，需 `Authorization: Bearer <PROXY_AUTH_TOKEN>`。
+- **Jina Key 配置：** 在环境变量中配置 `JINA_API_KEYS`（JSON 数组，env 变量名列表），如 `["JINA_KEY_1","JINA_KEY_2"]`，未配置时可使用单个 `JINA_API_KEY`。Key 从 [Jina AI](https://jina.ai/?sui=apikey) 免费获取。
+
+---
+
 ## 🔒 安全建议
 
 **请不要把真正的 API Key 写进源码！** 所有敏感信息都应存在 Cloudflare Secrets 中，以防被泄露。

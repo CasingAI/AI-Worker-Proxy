@@ -71,6 +71,8 @@ wrangler secret put ZHIPU_KEY_1
 
 **可选 — Relay 白名单**：若使用 `/relay?url=...` 代理转发能力，需在 `wrangler.toml` 的 `[vars]` 或 `.dev.vars` 中配置 `RELAY_ALLOWED_HOSTS`（JSON 数组字符串，如 `["api.openai.com","api.example.com"]`）。未配置或空数组时 relay 请求会返回 403。
 
+**可选 — Jina 工具**：若使用 `GET /tools` 与 `POST /tools/execute` 中的 Jina 读取/搜索，需配置 `JINA_API_KEYS`（JSON 数组，env 变量名列表，如 `["JINA_KEY_1","JINA_KEY_2"]`），并在 Secrets 或 `.dev.vars` 中设置对应 Key；未配置时也可使用单个 `JINA_API_KEY`。
+
 ### 4. 本地验证
 
 ```bash

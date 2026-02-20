@@ -157,6 +157,8 @@ export interface Env {
   ROUTES_CONFIG: string; // Environment variable (injected from GitHub Variable)
   /** JSON 数组字符串，仅允许 relay 到这些 host，如 ["api.openai.com","api.anthropic.com"] */
   RELAY_ALLOWED_HOSTS?: string;
+  /** JSON 数组字符串，Jina 工具使用的 API Key 的 env 变量名，支持多 key 轮换，如 ["JINA_KEY_1","JINA_KEY_2"] */
+  JINA_API_KEYS?: string;
   [key: string]: any; // Dynamic API keys (Cloudflare Secrets, set in Dashboard)
 }
 

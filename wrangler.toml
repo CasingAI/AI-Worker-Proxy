@@ -156,7 +156,7 @@ RELAY_ALLOWED_HOSTS = '''
 '''
 
 # Jina 工具（GET /tools、POST /tools/execute）多 Key 轮换，JSON 数组为 env 变量名
-# JINA_API_KEYS = '["JINA_KEY_1","JINA_KEY_2"]'
+JINA_API_KEYS = '["JINA_KEY_1"]'
 
 # Secrets to set in Cloudflare Dashboard:
 # - PROXY_AUTH_TOKEN

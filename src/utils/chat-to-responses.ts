@@ -294,6 +294,18 @@ export interface ResponseStreamEvent {
   [key: string]: unknown;
 }
 
+/** 构建用于 response.in_progress 的 response 快照，去掉 output 项上的内部字段（如 _accumulated）。 */
+function snapshotResponseForInProgress(responseObject: IncompleteResponse): Record<string, unknown> {
+  const output = responseObject.output.map((item) => {
+    if (item && '_accumulated' in item && typeof item === 'object') {
+      const { _accumulated: _, ...rest } = item as Record<string, unknown>;
+      return rest;
+    }
+    return item;
+  });
+  return { ...responseObject, output };
+}
+
 /**
  * 从 Chat Completions stream 产出 Responses API 事件序列。
  * 不执行 MCP/function_call，仅产出事件；function_call 只产出 .done 等事件。
@@ -323,6 +335,8 @@ export async function* streamChatToResponseEvents(
         output_tokens_details: { reasoning_tokens: 0 },
         total_tokens: previousTotalTokens + (chunk.usage.total_tokens ?? 0),
       };
+      const snapshot = snapshotResponseForInProgress(responseObject);
+      yield push({ type: 'response.in_progress', response: snapshot });
     }
 
     if (!chunk.choices?.[0]) continue;

@@ -125,14 +125,6 @@ export class OpenAIChatProvider extends BaseProvider {
         };
         await writer.write(encoder.encode(`data: ${JSON.stringify(createdEvent)}\n\n`));
 
-        // response.in_progress
-        const inProgressEvent = {
-          type: 'response.in_progress',
-          response: { ...responseObject, output: [] },
-          sequence_number: 1,
-        };
-        await writer.write(encoder.encode(`data: ${JSON.stringify(inProgressEvent)}\n\n`));
-
         let seq = 2;
         for await (const event of streamChatToResponseEvents(
           stream as AsyncIterable<import('openai/resources/chat/completions').ChatCompletionChunk>,

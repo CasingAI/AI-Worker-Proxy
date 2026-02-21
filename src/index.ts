@@ -58,7 +58,7 @@ export default {
       }
 
       // Tools list endpoint
-      if ((path === '/tools' || path === '/v1/tools') && request.method === 'GET') {
+      if (path === '/tools' && request.method === 'GET') {
         const toolsResponse = await handleToolsRequest(request, env);
         const headers = new Headers(toolsResponse.headers);
         Object.entries(getCORSHeaders(request)).forEach(([k, v]) => headers.set(k, v));
@@ -69,7 +69,7 @@ export default {
       }
 
       // Tools execute endpoint (e.g. get_web_page, search)
-      if ((path === '/tools/execute' || path === '/v1/tools/execute') && request.method === 'POST') {
+      if (path === '/tools/execute' && request.method === 'POST') {
         const execResponse = await handleToolsExecuteRequest(request, env);
         const headers = new Headers(execResponse.headers);
         Object.entries(getCORSHeaders(request)).forEach(([k, v]) => headers.set(k, v));

@@ -4,7 +4,7 @@ import { JINA_TOOLS } from './definitions';
 import { jinaReader, jinaSearch } from './jina';
 
 /**
- * Handles GET /tools and GET /v1/tools.
+ * Handles GET /tools.
  * Returns a list of tools available via this proxy (includes Jina read/search).
  */
 export async function handleToolsRequest(_request: Request, _env: Env): Promise<Response> {
@@ -26,7 +26,7 @@ export interface ToolsExecuteRequest {
 }
 
 /**
- * Handles POST /tools/execute and POST /v1/tools/execute.
+ * Handles POST /tools/execute.
  * Runs the given tool with arguments (e.g. get_web_page with url, search with q).
  */
 export async function handleToolsExecuteRequest(request: Request, env: Env): Promise<Response> {
@@ -78,10 +78,10 @@ export async function handleToolsExecuteRequest(request: Request, env: Env): Pro
     }
     const result = await jinaSearch(env, {
       q,
-      gl: typeof args.gl === 'string' ? args.gl : undefined,
-      hl: typeof args.hl === 'string' ? args.hl : undefined,
-      num: typeof args.num === 'number' ? args.num : undefined,
-      page: typeof args.page === 'number' ? args.page : undefined,
+      // gl: typeof args.gl === 'string' ? args.gl : undefined,
+      // hl: typeof args.hl === 'string' ? args.hl : undefined,
+      // num: typeof args.num === 'number' ? args.num : undefined,
+      // page: typeof args.page === 'number' ? args.page : undefined,
     });
     if (!result.success) {
       return new Response(

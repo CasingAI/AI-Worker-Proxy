@@ -53,14 +53,21 @@ async function searchWithKey(
   params: JinaSearchRequest,
   apiKey: string
 ): Promise<JinaSearchResponse> {
-  const res = await fetch(SEARCH_URL, {
-    method: 'POST',
+  const searchParams = new URLSearchParams({ q: params.q });
+  if (params.gl) searchParams.set('gl', params.gl);
+  if (params.location) searchParams.set('location', params.location);
+  if (params.hl) searchParams.set('hl', params.hl);
+  if (params.num != null) searchParams.set('num', String(params.num));
+  if (params.page != null) searchParams.set('page', String(params.page));
+  const url = `${SEARCH_URL}?${searchParams.toString()}`;
+  const res = await fetch(url, {
+    method: 'GET',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      'X-Respond-With': 'no-content',
+      'X-With-Favicons': 'true',
     },
-    body: JSON.stringify(params),
   });
   const data = (await res.json()) as JinaSearchResponse;
   if (!res.ok) {

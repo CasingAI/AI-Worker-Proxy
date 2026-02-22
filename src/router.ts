@@ -149,11 +149,11 @@ export class Router {
 
     const routeResolution = this.getProvidersForModel(model);
     const providers = routeResolution.providers;
-    const routeReasoningEffort = routeResolution.entry.metadata?.reasoning_effort;
+    const routeConfig = routeResolution.entry.config;
 
     console.log(`[Router] Model "${model}" has ${providers.length} provider(s) configured`);
     console.log(
-      `[Router] Route "${routeResolution.routeName}" reasoning_effort="${routeReasoningEffort ?? 'default'}"`
+      `[Router] Route "${routeResolution.routeName}" config.enableThinking=${routeConfig?.enableThinking ?? 'default'}`
     );
 
     let lastError: any = null;
@@ -171,7 +171,7 @@ export class Router {
           ? { ...request, customParams: config.customParams }
           : request;
         const manager = new TokenManager(config, this.env);
-        const response = await manager.executeWithRotation(requestWithParams, routeReasoningEffort);
+        const response = await manager.executeWithRotation(requestWithParams, routeConfig);
 
         if (response.success) {
           console.log(`[Router] Success with provider: ${config.provider}/${config.model}`);

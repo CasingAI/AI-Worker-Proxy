@@ -1,4 +1,4 @@
-import { ProviderConfig, Env, OpenAIChatRequest, ProviderResponse, ReasoningEffort } from './types';
+import { ProviderConfig, Env, OpenAIChatRequest, ProviderResponse, RouteConfigOptions } from './types';
 import { createProvider } from './providers';
 import { isRetryableError, isRateLimitError } from './utils/error-handler';
 
@@ -14,7 +14,7 @@ export class TokenManager {
    */
   async executeWithRotation(
     request: OpenAIChatRequest,
-    reasoningEffort?: ReasoningEffort
+    routeConfig?: RouteConfigOptions
   ): Promise<ProviderResponse> {
     const provider = createProvider(this.config, this.env);
     const apiKeys = this.getApiKeys();
@@ -33,7 +33,7 @@ export class TokenManager {
       }
 
       // For providers that don't need API keys
-      return await provider.chat(request, '', reasoningEffort);
+      return await provider.chat(request, '', routeConfig);
     }
 
     let lastError: any = null;
@@ -46,7 +46,7 @@ export class TokenManager {
           `[TokenManager] Trying ${this.config.provider}/${this.config.model} with key ending in ...${apiKey.slice(-4)}`
         );
 
-        const response = await provider.chat(request, apiKey, reasoningEffort);
+        const response = await provider.chat(request, apiKey, routeConfig);
 
         if (response.success) {
           console.log(`[TokenManager] Success with key ending in ...${apiKey.slice(-4)}`);

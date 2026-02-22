@@ -1,13 +1,13 @@
-import { OpenAIChatRequest, ProviderResponse, ReasoningEffort } from '../types';
+import { OpenAIChatRequest, ProviderResponse, RouteConfigOptions } from '../types';
 
 export interface AIProvider {
   /**
    * Send a chat completion request
    * @param request OpenAI-format request
    * @param apiKey API key to use
-   * @returns Provider response with either response object or stream
+   * @param routeConfig 路由 config（enableThinking、prompt），覆盖请求体
    */
-  chat(request: OpenAIChatRequest, apiKey: string, reasoningEffort?: ReasoningEffort): Promise<ProviderResponse>;
+  chat(request: OpenAIChatRequest, apiKey: string, routeConfig?: RouteConfigOptions): Promise<ProviderResponse>;
 }
 
 export abstract class BaseProvider implements AIProvider {
@@ -19,7 +19,7 @@ export abstract class BaseProvider implements AIProvider {
   abstract chat(
     request: OpenAIChatRequest,
     apiKey: string,
-    reasoningEffort?: ReasoningEffort
+    routeConfig?: RouteConfigOptions
   ): Promise<ProviderResponse>;
 
   protected handleError(error: any, context: string): ProviderResponse {

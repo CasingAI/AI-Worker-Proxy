@@ -5,7 +5,7 @@
 
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse, ReasoningEffort } from '../types';
+import { OpenAIChatRequest, ProviderResponse, RouteConfigOptions } from '../types';
 import type { IncompleteResponse } from '../utils/chat-to-responses';
 import {
   inputToChatMessages,
@@ -28,7 +28,7 @@ export class OpenAIChatProvider extends BaseProvider {
   async chat(
     request: OpenAIChatRequest,
     apiKey: string,
-    _reasoningEffort?: ReasoningEffort
+    routeConfig?: RouteConfigOptions
   ): Promise<ProviderResponse> {
     try {
       const client = new OpenAI({
@@ -36,12 +36,24 @@ export class OpenAIChatProvider extends BaseProvider {
         baseURL: this.endpoint,
       });
 
+      const baseInstructions =
+        request.input !== undefined ? request.instructions : extractInstructions(request);
+      const effectiveInstructions =
+        routeConfig?.prompt && routeConfig.prompt.trim()
+          ? routeConfig.prompt.trim() + '\n\n' + (baseInstructions ?? '')
+          : baseInstructions;
+
+      const requestForInput =
+        request.input !== undefined && effectiveInstructions !== baseInstructions
+          ? { ...request, instructions: effectiveInstructions }
+          : request;
+
       const messages =
         request.input !== undefined
-          ? inputToChatMessages(request)
-          : openaiMessagesToChatParams(normalizeMessages(request), extractInstructions(request));
+          ? inputToChatMessages(requestForInput)
+          : openaiMessagesToChatParams(normalizeMessages(request), effectiveInstructions ?? undefined);
 
-      const payload = buildChatPayload(request, this.model, messages);
+      const payload = buildChatPayload(request, this.model, messages, routeConfig);
 
       if (request.stream) {
         return this.handleStream(client, payload, request);

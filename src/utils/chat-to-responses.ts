@@ -21,7 +21,7 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
-import type { OpenAIChatRequest, OpenAIMessage, ProxyInputItem, ProxyResponse, RouteConfigOptions, Tool } from '../types';
+import type { OpenAIChatRequest, OpenAIMessage, ProxyInputItem, ProxyResponse, Tool } from '../types';
 import { normalizeFunctionTools } from './tool-normalizer';
 import { mapToolChoiceToChat } from './tool-normalizer';
 
@@ -217,12 +217,11 @@ type RequestWithResponsesParams = OpenAIChatRequest & {
   reasoning?: { effort?: string };
 };
 
-/** 以 routeConfig 为准，忽略请求体。智谱 Z.AI 用 thinking.type 控制思考（非 reasoning_effort） */
+/** 构建 Chat Completions 请求体。思考等供应商参数由 customParams 传入（如智谱 thinking.type）。 */
 export function buildChatPayload(
   request: OpenAIChatRequest,
   model: string,
-  messages: ChatCompletionMessageParam[],
-  routeConfig?: RouteConfigOptions
+  messages: ChatCompletionMessageParam[]
 ): ChatCompletionCreateParamsStreaming {
   const tools = mapToolsToChat(request.tools);
   const tool_choice = mapToolChoice(request.tool_choice);
@@ -230,12 +229,6 @@ export function buildChatPayload(
   const max_tokens =
     req.max_output_tokens === null ? undefined : (req.max_output_tokens ?? req.max_tokens ?? undefined);
   const response_format = mapResponseFormat(req.text?.format);
-  const thinking =
-    routeConfig?.enableThinking === true
-      ? { type: 'enabled' as const }
-      : routeConfig?.enableThinking === false
-        ? { type: 'disabled' as const }
-        : undefined;
 
   return {
     model,
@@ -247,7 +240,6 @@ export function buildChatPayload(
     tools: tools?.length ? tools : undefined,
     tool_choice: tool_choice ?? 'auto',
     ...(response_format && { response_format }),
-    ...(thinking && { thinking }),
     ...(request.customParams ?? {}),
   };
 }

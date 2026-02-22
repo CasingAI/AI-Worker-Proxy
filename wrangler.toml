@@ -28,7 +28,6 @@ ROUTES_CONFIG = '''
     "displayName": "GLM 4.7 FlashX Extra High",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择",
     "config": {
-      "enableThinking": true,
       "prompt": "**Be resourceful.** Always figure it out first. Read the fucking file/docs. Check the context. Search for it. _Then_ ask if you're stuck."
     },
     "contextWindow": 200000,
@@ -43,7 +42,7 @@ ROUTES_CONFIG = '''
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
         "outputPricePer1m": 3,
-        "customParams": { "tool_stream": true }
+        "customParams": { "tool_stream": true, "thinking": { "type": "enabled" } }
       }
     ],
     "metadata": {
@@ -55,9 +54,6 @@ ROUTES_CONFIG = '''
   "zhipu-flash-latest-high": {
     "displayName": "GLM 4.7 FlashX High",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择",
-    "config": {
-      "enableThinking": true
-    },
     "contextWindow": 200000,
     "maxOutputTokens": 16384,
     "providers": [
@@ -70,7 +66,7 @@ ROUTES_CONFIG = '''
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
         "outputPricePer1m": 3,
-        "customParams": { "tool_stream": true }
+        "customParams": { "tool_stream": true, "thinking": { "type": "enabled" } }
       }
     ],
     "metadata": {
@@ -82,9 +78,6 @@ ROUTES_CONFIG = '''
   "zhipu-flash-latest-medium": {
     "displayName": "GLM 4.7 FlashX",
     "description": "智谱提供的 30B 级 SOTA 模型，兼顾性能与效率的新选择",
-    "config": {
-      "enableThinking": false
-    },
     "contextWindow": 200000,
     "maxOutputTokens": 16384,
     "providers": [
@@ -97,7 +90,7 @@ ROUTES_CONFIG = '''
         "inputPricePer1m": 0.5,
         "inputCachePricePer1m": 0.1,
         "outputPricePer1m": 3,
-        "customParams": { "tool_stream": true }
+        "customParams": { "tool_stream": true, "thinking": { "type": "disabled" } }
       }
     ],
     "metadata": {

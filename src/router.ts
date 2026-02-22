@@ -152,9 +152,6 @@ export class Router {
     const routeConfig = routeResolution.entry.config;
 
     console.log(`[Router] Model "${model}" has ${providers.length} provider(s) configured`);
-    console.log(
-      `[Router] Route "${routeResolution.routeName}" config.enableThinking=${routeConfig?.enableThinking ?? 'default'}`
-    );
 
     let lastError: any = null;
     let lastStatusCode: number | undefined;

@@ -132,10 +132,8 @@ export interface RouteMetadata {
   [key: string]: unknown;
 }
 
-/** 路由内部行为配置：思考开关、自定义 prompt 注入 */
+/** 路由内部行为配置。思考等供应商参数用 provider.customParams。 */
 export interface RouteConfigOptions {
-  /** 是否开启思考（如智谱 reasoning_effort） */
-  enableThinking?: boolean;
   /** 自定义 prompt，注入到 system/instructions */
   prompt?: string;
 }

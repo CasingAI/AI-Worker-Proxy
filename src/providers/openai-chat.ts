@@ -53,7 +53,7 @@ export class OpenAIChatProvider extends BaseProvider {
           ? inputToChatMessages(requestForInput)
           : openaiMessagesToChatParams(normalizeMessages(request), effectiveInstructions ?? undefined);
 
-      const payload = buildChatPayload(request, this.model, messages, routeConfig);
+      const payload = buildChatPayload(request, this.model, messages);
 
       if (request.stream) {
         return this.handleStream(client, payload, request);

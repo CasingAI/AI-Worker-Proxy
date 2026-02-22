@@ -217,7 +217,7 @@ type RequestWithResponsesParams = OpenAIChatRequest & {
   reasoning?: { effort?: string };
 };
 
-/** 以 routeConfig 为准，忽略请求体中的 enableThinking / reasoning.effort */
+/** 以 routeConfig 为准，忽略请求体。智谱 Z.AI 用 thinking.type 控制思考（非 reasoning_effort） */
 export function buildChatPayload(
   request: OpenAIChatRequest,
   model: string,
@@ -230,8 +230,12 @@ export function buildChatPayload(
   const max_tokens =
     req.max_output_tokens === null ? undefined : (req.max_output_tokens ?? req.max_tokens ?? undefined);
   const response_format = mapResponseFormat(req.text?.format);
-  const reasoning_effort =
-    routeConfig?.enableThinking === true ? 'high' : routeConfig?.enableThinking === false ? undefined : undefined;
+  const thinking =
+    routeConfig?.enableThinking === true
+      ? { type: 'enabled' as const }
+      : routeConfig?.enableThinking === false
+        ? { type: 'disabled' as const }
+        : undefined;
 
   return {
     model,
@@ -243,7 +247,7 @@ export function buildChatPayload(
     tools: tools?.length ? tools : undefined,
     tool_choice: tool_choice ?? 'auto',
     ...(response_format && { response_format }),
-    ...(reasoning_effort && { reasoning_effort }),
+    ...(thinking && { thinking }),
     ...(request.customParams ?? {}),
   };
 }

@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { BaseProvider } from './base';
-import { OpenAIChatRequest, ProviderResponse, ReasoningEffort, Tool } from '../types';
+import { OpenAIChatRequest, ProviderResponse, RouteConfigOptions, Tool } from '../types';
 import { buildResponseInput, extractInstructions } from '../utils/request';
 import { mapToolChoiceToResponses, normalizeFunctionTools } from '../utils/tool-normalizer';
 
@@ -8,7 +8,7 @@ export class OpenAIProvider extends BaseProvider {
   async chat(
     request: OpenAIChatRequest,
     apiKey: string,
-    _reasoningEffort?: ReasoningEffort
+    _routeConfig?: RouteConfigOptions
   ): Promise<ProviderResponse> {
     try {
       const client = new OpenAI({

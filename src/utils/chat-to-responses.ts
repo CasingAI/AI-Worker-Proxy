@@ -21,7 +21,7 @@ import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
-import type { OpenAIChatRequest, OpenAIMessage, ProxyInputItem, ProxyResponse, Tool } from '../types';
+import type { OpenAIChatRequest, OpenAIMessage, ProxyInputItem, ProxyResponse, RouteConfigOptions, Tool } from '../types';
 import { normalizeFunctionTools } from './tool-normalizer';
 import { mapToolChoiceToChat } from './tool-normalizer';
 
@@ -217,10 +217,12 @@ type RequestWithResponsesParams = OpenAIChatRequest & {
   reasoning?: { effort?: string };
 };
 
+/** 以 routeConfig 为准，忽略请求体中的 enableThinking / reasoning.effort */
 export function buildChatPayload(
   request: OpenAIChatRequest,
   model: string,
-  messages: ChatCompletionMessageParam[]
+  messages: ChatCompletionMessageParam[],
+  routeConfig?: RouteConfigOptions
 ): ChatCompletionCreateParamsStreaming {
   const tools = mapToolsToChat(request.tools);
   const tool_choice = mapToolChoice(request.tool_choice);
@@ -228,7 +230,8 @@ export function buildChatPayload(
   const max_tokens =
     req.max_output_tokens === null ? undefined : (req.max_output_tokens ?? req.max_tokens ?? undefined);
   const response_format = mapResponseFormat(req.text?.format);
-  const reasoning_effort = req.reasoning?.effort as 'low' | 'medium' | 'high' | undefined;
+  const reasoning_effort =
+    routeConfig?.enableThinking === true ? 'high' : routeConfig?.enableThinking === false ? undefined : undefined;
 
   return {
     model,
